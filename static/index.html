@@ -10,8 +10,6 @@
   --bg: #f2f2f7;
   --wall-bg: #e8e8ed;
   --glass-bg: rgba(255,255,255,0.72);
-  --glass-border: rgba(255,255,255,0.5);
-  --glass-shadow: 0 8px 32px rgba(0,0,0,0.08);
   --text-primary: #1c1c1e;
   --text-secondary: #636366;
   --text-tertiary: #aeaeb2;
@@ -19,11 +17,8 @@
   --accent-dim: rgba(0,122,255,0.12);
   --red: #FF3B30;
   --orange: #FF9500;
-  --yellow: #FFCC00;
   --green: #34C759;
-  --teal: #5AC8FA;
   --purple: #AF52DE;
-  --pink: #FF2D55;
   --radius-sm: 12px;
   --radius-md: 20px;
   --radius-lg: 28px;
@@ -34,9 +29,7 @@
   --transition-spring: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   --safe-bottom: env(safe-area-inset-bottom, 16px);
 }
-
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
 html, body {
   height: 100%; width: 100%;
   font-family: var(--font);
@@ -45,39 +38,29 @@ html, body {
   overflow: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  user-select: none;
-  -webkit-user-select: none;
+  user-select: none; -webkit-user-select: none;
 }
 
-/* ========== Wall Area ========== */
+/* ========== Wall ========== */
 .wall {
-  position: relative;
-  width: 100%; height: 100%;
-  background:
-    radial-gradient(ellipse at 20% 20%, #e0e0e8 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 60%, #d8d8e0 0%, transparent 50%),
-    var(--wall-bg);
+  position: relative; width: 100%; height: 100%;
+  background: radial-gradient(ellipse at 20% 20%, #e0e0e8 0%, transparent 50%),
+              radial-gradient(ellipse at 80% 60%, #d8d8e0 0%, transparent 50%),
+              var(--wall-bg);
   overflow: hidden;
 }
-
-/* Grid dots decoration */
 .wall::before {
-  content: '';
-  position: absolute; inset: 0;
+  content: ''; position: absolute; inset: 0;
   background-image: radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1px);
-  background-size: 32px 32px;
-  pointer-events: none;
-  z-index: 0;
+  background-size: 32px 32px; pointer-events: none; z-index: 0;
 }
 
-/* Wall click hint (shown briefly on empty click area) */
 .wall-hint {
-  position: absolute; pointer-events: none;
+  position: absolute; pointer-events: none; z-index: 50;
   width: 70px; height: 70px; border-radius: 50%;
   background: rgba(0,122,255,0.18);
   transform: translate(-50%, -50%);
   animation: hintPulse 0.6s ease-out forwards;
-  z-index: 50;
 }
 @keyframes hintPulse {
   0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
@@ -87,339 +70,264 @@ html, body {
 /* ========== Buttons ========== */
 .btn {
   display: inline-flex; align-items: center; justify-content: center;
-  gap: 6px; padding: 10px 18px;
-  border: none; border-radius: var(--radius-md);
-  font-family: var(--font); font-size: 15px; font-weight: 590;
-  cursor: pointer; transition: all var(--transition-fast);
-  white-space: nowrap;
+  gap: 6px; padding: 10px 18px; border: none; border-radius: var(--radius-md);
+  font-family: var(--font); font-size: 15px; font-weight: 590; cursor: pointer;
+  transition: all var(--transition-fast); white-space: nowrap;
 }
-.btn-primary {
-  background: var(--accent); color: #fff;
-  box-shadow: 0 4px 14px rgba(0,122,255,0.3);
-}
+.btn-primary { background: var(--accent); color: #fff; box-shadow: 0 4px 14px rgba(0,122,255,0.3); }
 .btn-primary:hover { background: #0070e9; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,122,255,0.4); }
 .btn-primary:active { transform: scale(0.96); }
-.btn-ghost {
-  background: #f5f5f7; color: var(--accent);
-  border: 0.5px solid rgba(0,0,0,0.08);
-}
+.btn-ghost { background: #f5f5f7; color: var(--accent); border: 0.5px solid rgba(0,0,0,0.08); }
 .btn-ghost:hover { background: rgba(0,122,255,0.08); }
-.btn-danger {
-  background: rgba(255,59,48,0.1); color: var(--red);
-}
+.btn-danger { background: rgba(255,59,48,0.1); color: var(--red); }
 .btn-danger:hover { background: var(--red); color: #fff; }
-.btn-sm {
-  padding: 6px 14px; font-size: 13px; border-radius: var(--radius-sm);
+.btn-sm { padding: 6px 14px; font-size: 13px; border-radius: var(--radius-sm); }
+.btn-icon-circle {
+  width: 34px; height: 34px; padding: 0; border-radius: 50%; border: none;
+  background: rgba(0,0,0,0.06); font-size: 18px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-secondary); transition: background var(--transition-fast);
 }
+.btn-icon-circle:hover { background: rgba(0,0,0,0.12); }
 
-/* ========== Sticker Card (on wall) ========== */
+/* ========== Sticker Card ========== */
 .sticker {
-  position: absolute;
-  border-radius: var(--radius-md);
+  position: absolute; border-radius: var(--radius-md);
   box-shadow: 0 4px 20px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.06);
-  cursor: pointer;
-  transition: box-shadow var(--transition-smooth), transform var(--transition-fast);
-  overflow: hidden;
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  z-index: 1;
+  cursor: pointer; transition: box-shadow var(--transition-smooth), transform var(--transition-fast);
+  overflow: hidden; backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); z-index: 1;
 }
 .sticker:hover { box-shadow: 0 12px 36px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08); transform: scale(1.02); }
 .sticker.dragging {
   opacity: 0.92; z-index: 999 !important;
   box-shadow: 0 20px 48px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.1);
-  transform: scale(1.04) !important; transition: none;
-  cursor: grabbing;
+  transform: scale(1.04) !important; transition: none; cursor: grabbing;
 }
-.sticker-entering {
-  animation: stickerPop var(--transition-spring) both;
-}
-
+.sticker-entering { animation: stickerPop var(--transition-spring) both; }
 @keyframes stickerPop {
   0% { transform: scale(0.3) rotate(0deg); opacity: 0; }
   60% { transform: scale(1.08) rotate(var(--rot, 0deg)); opacity: 1; }
   100% { transform: scale(1) rotate(var(--rot, 0deg)); opacity: 1; }
 }
-
-@keyframes stickerFadeOut {
-  to { transform: scale(0.4); opacity: 0; }
-}
-
-/* Sticker inner */
+@keyframes stickerFadeOut { to { transform: scale(0.4); opacity: 0; } }
 .sticker-inner {
-  width: 100%; height: 100%;
-  display: flex; flex-direction: column;
-  padding: 16px 18px;
-  position: relative;
-  pointer-events: none;  /* let clicks pass through to sticker for drag */
+  width: 100%; height: 100%; display: flex; flex-direction: column;
+  padding: 16px 18px; position: relative; pointer-events: none;
 }
-.sticker-author {
-  font-size: 11px; font-weight: 600; color: var(--text-tertiary);
-  letter-spacing: 0.5px; text-transform: uppercase;
-  margin-bottom: 4px;
-}
-.sticker-date {
-  font-size: 10px; color: var(--text-tertiary);
-  margin-bottom: 10px;
-}
+.sticker-author { font-size: 11px; font-weight: 600; color: var(--text-tertiary); letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 4px; }
+.sticker-date { font-size: 10px; color: var(--text-tertiary); margin-bottom: 10px; }
 .sticker-content {
-  flex: 1; overflow: hidden;
-  font-size: 14px; line-height: 1.55; color: var(--text-primary);
-  white-space: pre-wrap; word-break: break-word;
-  display: flex; flex-direction: column;
+  flex: 1; overflow: hidden; font-size: 14px; line-height: 1.55; color: var(--text-primary);
+  white-space: pre-wrap; word-break: break-word; display: flex; flex-direction: column;
 }
-.sticker-content .text-body {
-  display: -webkit-box;
-  -webkit-line-clamp: 8;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.sticker-content img {
-  max-width: 100%; border-radius: var(--radius-sm);
-  margin-top: 4px; object-fit: contain;
-  max-height: 160px;
-}
-.sticker-content canvas {
-  width: 100%; height: auto; border-radius: var(--radius-sm);
-  max-height: 170px; object-fit: contain;
-}
-
-/* Tape decoration */
+.sticker-content .text-body { display: -webkit-box; -webkit-line-clamp: 8; -webkit-box-orient: vertical; overflow: hidden; }
+.sticker-content img { max-width: 100%; border-radius: var(--radius-sm); margin-top: 4px; object-fit: contain; max-height: 160px; }
+.sticker-content canvas { width: 100%; height: auto; border-radius: var(--radius-sm); max-height: 170px; object-fit: contain; }
 .sticker-tape {
-  position: absolute; top: -8px; left: 50%;
-  transform: translateX(-50%) rotate(-2deg);
-  width: 50px; height: 16px;
-  background: rgba(200,190,170,0.55);
-  border-radius: 2px;
+  position: absolute; top: -8px; left: 50%; transform: translateX(-50%) rotate(-2deg);
+  width: 50px; height: 16px; background: rgba(200,190,170,0.55); border-radius: 2px;
   z-index: 2; pointer-events: none;
 }
 
-/* ========== Floating Add Button ========== */
+/* ========== FAB ========== */
 .fab {
   position: fixed; bottom: calc(28px + var(--safe-bottom)); right: 28px; z-index: 110;
-  width: 58px; height: 58px; border-radius: 50%;
-  background: var(--accent); color: #fff;
-  border: none; font-size: 30px; cursor: pointer;
-  box-shadow: 0 8px 28px rgba(0,122,255,0.4);
-  display: flex; align-items: center; justify-content: center;
-  transition: all var(--transition-spring);
+  width: 58px; height: 58px; border-radius: 50%; background: var(--accent); color: #fff;
+  border: none; font-size: 30px; cursor: pointer; box-shadow: 0 8px 28px rgba(0,122,255,0.4);
+  display: flex; align-items: center; justify-content: center; transition: all var(--transition-spring);
 }
 .fab:hover { transform: scale(1.1); box-shadow: 0 12px 36px rgba(0,122,255,0.5); }
 .fab:active { transform: scale(0.92); }
 
-/* ========== Menu (popover) ========== */
-.menu-overlay {
-  position: fixed; inset: 0; z-index: 200;
-  background: rgba(0,0,0,0.25);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  display: flex; align-items: flex-end; justify-content: center;
-  padding-bottom: 40px;
-  animation: fadeIn 0.2s ease;
-}
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-.menu-sheet {
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: blur(30px) saturate(180%);
-  -webkit-backdrop-filter: blur(30px) saturate(180%);
-  border-radius: var(--radius-xl);
-  padding: 8px;
-  display: flex; flex-direction: column;
-  gap: 2px;
-  width: 320px; max-width: calc(100vw - 40px);
-  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
-  animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
-.menu-item {
-  display: flex; align-items: center; gap: 14px;
-  padding: 14px 18px; border: none; border-radius: var(--radius-md);
-  background: transparent; font-family: var(--font);
-  font-size: 16px; font-weight: 500; color: var(--text-primary);
-  cursor: pointer; transition: background var(--transition-fast);
-}
-.menu-item:hover { background: rgba(0,0,0,0.04); }
-.menu-item .icon {
-  width: 38px; height: 38px; border-radius: var(--radius-sm);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 20px; color: #fff;
-}
-.menu-item .icon.blue { background: var(--accent); }
-.menu-item .icon.orange { background: var(--orange); }
-.menu-item .icon.green { background: var(--green); }
-.menu-item .icon.purple { background: var(--purple); }
-.menu-cancel {
-  padding: 14px 18px; border: none; border-radius: var(--radius-md);
-  background: rgba(0,0,0,0.04); font-family: var(--font);
-  font-size: 16px; font-weight: 600; color: var(--text-secondary);
-  cursor: pointer; margin-top: 4px; transition: background var(--transition-fast);
-}
-.menu-cancel:hover { background: rgba(0,0,0,0.08); }
-
 /* ========== Detail Overlay ========== */
 .detail-overlay {
-  position: fixed; inset: 0; z-index: 400;
-  background: rgba(0,0,0,0.45);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  display: flex; align-items: center; justify-content: center;
-  padding: 32px;
+  position: fixed; inset: 0; z-index: 400; background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: center; padding: 32px;
   animation: fadeIn 0.25s ease;
 }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 .detail-card {
-  background: #fff;
-  border-radius: var(--radius-xl);
-  max-width: 560px; width: 100%; max-height: 80vh;
-  display: flex; flex-direction: column;
+  background: #fff; border-radius: var(--radius-xl); max-width: 560px; width: 100%;
+  max-height: 80vh; display: flex; flex-direction: column;
   box-shadow: 0 30px 70px rgba(0,0,0,0.3);
-  animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  overflow: hidden;
+  animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden;
 }
-.detail-header {
-  display: flex; align-items: flex-start; justify-content: space-between;
-  padding: 22px 24px 14px;
-  border-bottom: 0.5px solid rgba(0,0,0,0.08);
-}
-.detail-header h3 { font-size: 20px; font-weight: 680; }
+.detail-header { display: flex; align-items: flex-start; justify-content: space-between; padding: 22px 24px 14px; border-bottom: 0.5px solid rgba(0,0,0,0.08); }
 .detail-header-meta .author { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
 .detail-header-meta .date { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
-.detail-close {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: rgba(0,0,0,0.06); border: none;
-  font-size: 16px; cursor: pointer; color: var(--text-secondary);
-  display: flex; align-items: center; justify-content: center;
-  transition: background var(--transition-fast); flex-shrink: 0;
-}
+.detail-close { width: 32px; height: 32px; border-radius: 50%; background: rgba(0,0,0,0.06); border: none; font-size: 16px; cursor: pointer; color: var(--text-secondary); display: flex; align-items: center; justify-content: center; transition: background var(--transition-fast); flex-shrink: 0; }
 .detail-close:hover { background: rgba(0,0,0,0.12); }
-.detail-body {
-  flex: 1; overflow-y: auto; padding: 20px 24px;
-}
+.detail-body { flex: 1; overflow-y: auto; padding: 20px 24px; }
 .detail-body img { max-width: 100%; border-radius: var(--radius-md); }
 .detail-body canvas { max-width: 100%; border-radius: var(--radius-md); }
 .detail-body .text-content { font-size: 15px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
-.detail-footer {
-  padding: 14px 24px 20px;
-  display: flex; gap: 10px; justify-content: flex-end;
-  border-top: 0.5px solid rgba(0,0,0,0.06);
-}
+.detail-footer { padding: 14px 24px 20px; display: flex; gap: 10px; justify-content: flex-end; border-top: 0.5px solid rgba(0,0,0,0.06); }
 
-/* ========== Modal ========== */
-.modal-overlay {
-  position: fixed; inset: 0; z-index: 300;
-  background: rgba(0,0,0,0.35);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
-  display: flex; align-items: center; justify-content: center;
-  padding: 24px;
+/* ========== Creation Modal ========== */
+.create-overlay {
+  position: fixed; inset: 0; z-index: 300; background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; padding: 16px;
   animation: fadeIn 0.2s ease;
 }
-.modal {
-  background: #fff;
-  border-radius: var(--radius-xl);
-  width: 460px; max-width: 100%;
-  max-height: 85vh;
-  display: flex; flex-direction: column;
-  box-shadow: 0 30px 70px rgba(0,0,0,0.25);
-  animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  overflow: hidden;
+.create-modal {
+  background: #fff; border-radius: var(--radius-xl);
+  width: 480px; max-width: 100%; max-height: 95vh;
+  display: flex; flex-direction: column; position: relative;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.22);
+  animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1); overflow: hidden;
 }
 @keyframes modalPop {
   from { transform: scale(0.85) translateY(30px); opacity: 0; }
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
-.modal-header {
+
+/* ── Floating top bar (over content) ── */
+.create-floating-top {
+  position: absolute; top: 0; left: 0; right: 0; z-index: 10;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 20px 22px 14px;
-  border-bottom: 0.5px solid rgba(0,0,0,0.08);
+  padding: 12px 16px;
+  background: linear-gradient(to bottom, rgba(255,255,255,0.96) 60%, rgba(255,255,255,0) 100%);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  pointer-events: none;
 }
-.modal-header h3 { font-size: 18px; font-weight: 680; }
-.modal-close {
-  width: 30px; height: 30px; border-radius: 50%;
-  background: rgba(0,0,0,0.06); border: none;
-  font-size: 16px; cursor: pointer; color: var(--text-secondary);
+.create-floating-top > * { pointer-events: auto; }
+.toggle-switch {
+  display: flex; align-items: center;
+  background: #f0f0f5; border-radius: 10px; padding: 2px;
+}
+.toggle-option {
+  padding: 7px 16px; border-radius: 9px; border: none;
+  background: transparent; font-family: var(--font); font-size: 13px;
+  font-weight: 590; color: var(--text-secondary); cursor: pointer;
+  transition: all var(--transition-spring);
+  white-space: nowrap;
+}
+.toggle-option:hover { transform: scale(1.08); }
+.toggle-option:active { transform: scale(0.92); }
+.toggle-option.active {
+  background: #fff; color: var(--text-primary);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 0 0 0.5px rgba(0,0,0,0.04);
+}
+.create-close {
+  width: 36px; height: 36px; border-radius: 50%; background: rgba(0,0,0,0.12);
+  border: none; font-size: 14px; cursor: pointer; color: var(--text-primary);
   display: flex; align-items: center; justify-content: center;
-  transition: background var(--transition-fast);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  transition: all var(--transition-spring);
 }
-.modal-close:hover { background: rgba(0,0,0,0.12); }
-.modal-body {
-  flex: 1; overflow-y: auto; padding: 20px 22px;
-  display: flex; flex-direction: column; gap: 16px;
-}
-.modal-footer {
-  padding: 14px 22px 20px;
-  display: flex; gap: 10px; justify-content: flex-end;
-  border-top: 0.5px solid rgba(0,0,0,0.06);
-}
+.create-close:hover { background: rgba(0,0,0,0.22); transform: scale(1.1); }
+.create-close:active { transform: scale(0.9); }
 
-/* ========== Form Elements ========== */
-.form-group { display: flex; flex-direction: column; gap: 6px; }
-.form-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; }
-.form-input, .form-textarea {
-  padding: 12px 16px; border-radius: var(--radius-sm);
-  border: 1px solid rgba(0,0,0,0.12); background: #fafafa;
-  font-family: var(--font); font-size: 15px;
-  color: var(--text-primary); outline: none;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
-}
-.form-input:focus, .form-textarea:focus {
-  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim);
-}
-.form-textarea { resize: vertical; min-height: 100px; }
 
-/* Color picker */
-.color-options {
-  display: flex; gap: 8px; flex-wrap: wrap;
+/* ── Body ── */
+.create-body {
+  flex: 1; overflow-y: auto; display: flex; flex-direction: column;
+  padding-top: 58px;    /* space for floating top bar */
+  padding-bottom: 100px; /* space for unified footer (2 rows) */
 }
-.color-dot {
-  width: 30px; height: 30px; border-radius: 50%;
-  border: 2.5px solid transparent; cursor: pointer;
-  transition: transform var(--transition-fast), border-color var(--transition-fast);
+.create-textarea {
+  flex: 1; min-height: 280px; padding: 8px 20px 20px; border: none;
+  font-family: var(--font); font-size: 16px; line-height: 1.6; color: var(--text-primary);
+  resize: none; outline: none; background: transparent;
 }
-.color-dot:hover { transform: scale(1.15); }
-.color-dot.active { border-color: var(--accent); transform: scale(1.12); }
+.create-textarea::placeholder { color: var(--text-tertiary); }
 
-/* Canvas area */
-.canvas-container {
-  position: relative; border-radius: var(--radius-md);
-  border: 1px solid rgba(0,0,0,0.1); overflow: hidden;
-  background: #fff;
+/* Canvas panel */
+.create-canvas-panel {
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 4px 20px 20px;
 }
-.canvas-container canvas { display: block; width: 100%; cursor: crosshair; }
 .canvas-toolbar {
   display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
-  padding: 8px 0;
 }
 .tool-btn {
-  padding: 6px 12px; border-radius: var(--radius-sm);
-  border: 0.5px solid rgba(0,0,0,0.12); background: #fafafa;
-  font-family: var(--font); font-size: 13px; font-weight: 500;
-  cursor: pointer; color: var(--text-primary);
-  transition: all var(--transition-fast);
+  padding: 7px 11px; border-radius: 9px;
+  border: 0.5px solid rgba(0,0,0,0.10); background: #fafafc;
+  font-family: var(--font); font-size: 12px; font-weight: 590; cursor: pointer;
+  color: var(--text-primary); transition: all var(--transition-spring);
+  min-height: 34px;
 }
-.tool-btn:hover { background: rgba(0,0,0,0.05); }
+.tool-btn:hover { background: rgba(0,0,0,0.04); transform: scale(1.06); }
+.tool-btn:active { transform: scale(0.94); }
 .tool-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-.pen-size { width: 52px; padding: 6px; text-align: center; }
-
-/* Upload area */
-.upload-zone {
-  border: 2px dashed rgba(0,0,0,0.15); border-radius: var(--radius-md);
-  padding: 40px 20px; text-align: center; cursor: pointer;
-  transition: all var(--transition-fast);
+.pen-size { width: 48px; padding: 6px 4px; text-align: center; }
+.tool-sep { width: 0.5px; height: 28px; background: rgba(0,0,0,0.10); margin: 0 2px; }
+.canvas-wrap {
+  border-radius: var(--radius-md); overflow: hidden;
+  background: #fff; box-shadow: inset 0 0 0 0.5px rgba(0,0,0,0.08);
 }
-.upload-zone:hover { border-color: var(--accent); background: var(--accent-dim); }
-.upload-zone.drag-over { border-color: var(--accent); background: var(--accent-dim); transform: scale(1.01); }
-.upload-zone .upload-icon { font-size: 40px; margin-bottom: 10px; }
-.upload-zone p { font-size: 14px; color: var(--text-secondary); }
-.upload-preview { max-width: 100%; border-radius: var(--radius-md); margin-top: 12px; display: none; }
+.canvas-wrap canvas { display: block; width: 100%; cursor: crosshair; }
+
+/* Image-only preview (full body, no editor) */
+.create-image-preview {
+  flex: 1; display: none; align-items: center; justify-content: center;
+  padding: 62px 20px 62px;
+}
+.create-image-preview img {
+  max-width: 100%; max-height: 100%; object-fit: contain;
+  border-radius: var(--radius-md);
+}
+
+/* ── Unified Bottom Bar (name + image + color + submit) ── */
+.create-footer-bar {
+  position: absolute; bottom: 0; left: 0; right: 0; z-index: 11;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 10px 16px 16px;
+  background: linear-gradient(to top, rgba(255,255,255,0.96) 60%, rgba(255,255,255,0) 100%);
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+  pointer-events: none;
+}
+.create-footer-bar > * { pointer-events: auto; }
+.footer-row-top {
+  display: flex; align-items: center; gap: 8px;
+}
+.create-name-field {
+  flex: 1; min-width: 0;
+  padding: 10px 14px; border: none; border-radius: var(--radius-sm);
+  background: rgba(0,0,0,0.06); font-family: var(--font); font-size: 15px;
+  color: var(--text-primary); outline: none;
+  transition: background var(--transition-fast);
+}
+.create-name-field:focus { background: rgba(0,0,0,0.10); }
+.create-name-field::placeholder { color: var(--text-tertiary); }
+.create-btn-img {
+  width: 40px; height: 40px; padding: 0; border-radius: 50%; border: none;
+  background: rgba(0,0,0,0.08); font-size: 20px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--accent); transition: all var(--transition-spring);
+  flex-shrink: 0;
+}
+.create-btn-img:hover { background: rgba(0,122,255,0.15); transform: scale(1.12); }
+.create-btn-img:active { transform: scale(0.9); }
+.footer-row-bottom {
+  display: flex; align-items: center; justify-content: space-between;
+}
+.color-dots-inline { display: flex; gap: 7px; }
+.color-dot-sm {
+  width: 26px; height: 26px; border-radius: 50%;
+  border: 2.5px solid transparent; cursor: pointer;
+  transition: all var(--transition-spring);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+}
+.color-dot-sm:hover { transform: scale(1.22); }
+.color-dot-sm:active { transform: scale(0.9); }
+.color-dot-sm.active {
+  border-color: var(--accent);
+  transform: scale(1.14);
+  box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.create-footer-actions {
+  display: flex; gap: 8px; flex-shrink: 0;
+}
 
 /* ========== Toast ========== */
 .toast {
   position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 9999;
-  background: rgba(30,30,30,0.9); color: #fff;
-  padding: 12px 24px; border-radius: var(--radius-md);
-  font-size: 14px; font-weight: 500;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(30,30,30,0.9); color: #fff; padding: 12px 24px;
+  border-radius: var(--radius-md); font-size: 14px; font-weight: 500;
+  backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   animation: toastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
   pointer-events: none;
 }
@@ -427,19 +335,9 @@ html, body {
   from { opacity: 0; transform: translateX(-50%) translateY(20px); }
   to { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
-
-/* Scrollbar */
 ::-webkit-scrollbar { width: 4px; }
 ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
-
-/* 颜色预设 */
-.bg-1 { background: #FFF9E6; }
-.bg-2 { background: #F0F7FF; }
-.bg-3 { background: #FFF0F5; }
-.bg-4 { background: #F5FFF5; }
-.bg-5 { background: #FFF5F0; }
-.bg-6 { background: #F8F0FF; }
-.bg-7 { background: #FFFFFF; }
+.bg-1{background:#FFF9E6}.bg-2{background:#F0F7FF}.bg-3{background:#FFF0F5}.bg-4{background:#F5FFF5}.bg-5{background:#FFF5F0}.bg-6{background:#F8F0FF}.bg-7{background:#FFFFFF}
 </style>
 </head>
 <body>
@@ -447,26 +345,7 @@ html, body {
 <!-- ==================== WALL ==================== -->
 <div class="wall" id="wall">
   <div id="stickers-container"></div>
-  <button class="fab" id="fab" onclick="openMenu()" title="新建便签">+</button>
-</div>
-
-<!-- ==================== MENU OVERLAY ==================== -->
-<div class="menu-overlay" id="menuOverlay" style="display:none" onclick="closeMenu(event)">
-  <div class="menu-sheet" onclick="event.stopPropagation()">
-    <button class="menu-item" onclick="openTextModal()">
-      <span class="icon blue">📝</span> 文字便签
-    </button>
-    <button class="menu-item" onclick="openHandwriteModal()">
-      <span class="icon orange">✍️</span> 手写便签
-    </button>
-    <button class="menu-item" onclick="openImageModal()">
-      <span class="icon green">🖼️</span> 上传图片
-    </button>
-    <button class="menu-item" onclick="openDrawingModal()">
-      <span class="icon purple">🎨</span> 在线绘图
-    </button>
-    <button class="menu-cancel" onclick="closeMenu()">取消</button>
-  </div>
+  <button class="fab" id="fab" onclick="openCreateModal()" title="新建便签">+</button>
 </div>
 
 <!-- ==================== DETAIL OVERLAY ==================== -->
@@ -487,151 +366,65 @@ html, body {
   </div>
 </div>
 
-<!-- ==================== MODALS ==================== -->
+<!-- ==================== UNIFIED CREATE MODAL ==================== -->
+<div class="create-overlay" id="createOverlay" style="display:none" onclick="if(event.target===this)closeCreateModal()">
+  <div class="create-modal" onclick="event.stopPropagation()">
 
-<!-- Text Modal -->
-<div class="modal-overlay" id="textModal" style="display:none" onclick="if(event.target===this)closeTextModal()">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>📝 新建文字便签</h3>
-      <button class="modal-close" onclick="closeTextModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>你的名字</label>
-        <input type="text" class="form-input" id="textAuthor" placeholder="输入你的名字" maxlength="30">
+    <!-- Floating top: toggle + close -->
+    <div class="create-floating-top">
+      <div class="toggle-switch" id="modeToggle">
+<button class="toggle-option active" data-mode="text" onclick="setCreateMode('text')" title="文字">📝</button>
+<button class="toggle-option" data-mode="draw" onclick="setCreateMode('draw')" title="绘图">🎨</button>
       </div>
-      <div class="form-group">
-        <label>内容</label>
-        <textarea class="form-textarea" id="textContent" placeholder="写下你的想法…" rows="4"></textarea>
-      </div>
-      <div class="form-group">
-        <label>便签颜色</label>
-        <div class="color-options" id="textColorOptions">
-          <span class="color-dot active bg-1" data-color="#FFF9E6" onclick="selectColor(this,'textColorOptions')"></span>
-          <span class="color-dot bg-2" data-color="#F0F7FF" onclick="selectColor(this,'textColorOptions')"></span>
-          <span class="color-dot bg-3" data-color="#FFF0F5" onclick="selectColor(this,'textColorOptions')"></span>
-          <span class="color-dot bg-4" data-color="#F5FFF5" onclick="selectColor(this,'textColorOptions')"></span>
-          <span class="color-dot bg-5" data-color="#FFF5F0" onclick="selectColor(this,'textColorOptions')"></span>
-          <span class="color-dot bg-6" data-color="#F8F0FF" onclick="selectColor(this,'textColorOptions')"></span>
-          <span class="color-dot bg-7" data-color="#FFFFFF" onclick="selectColor(this,'textColorOptions')"></span>
-        </div>
-      </div>
+      <button class="create-close" onclick="closeCreateModal()">✕</button>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeTextModal()">取消</button>
-      <button class="btn btn-primary" onclick="submitTextSticker()">贴上去</button>
-    </div>
-  </div>
-</div>
 
-<!-- Handwrite Modal -->
-<div class="modal-overlay" id="handwriteModal" style="display:none" onclick="if(event.target===this)closeHandwriteModal()">
-  <div class="modal" style="width:520px">
-    <div class="modal-header">
-      <h3>✍️ 手写便签</h3>
-      <button class="modal-close" onclick="closeHandwriteModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>你的名字</label>
-        <input type="text" class="form-input" id="hwAuthor" placeholder="输入你的名字" maxlength="30">
-      </div>
-      <div class="form-group">
-        <label>手写区域</label>
-        <div class="canvas-toolbar">
-          <button class="tool-btn active" data-tool="pen" onclick="setHWTool('pen',this)">🖊 画笔</button>
-          <button class="tool-btn" data-tool="eraser" onclick="setHWTool('eraser',this)">🧹 橡皮</button>
-          <input type="color" id="hwColor" value="#1c1c1e" title="颜色" style="width:32px;height:32px;border:none;cursor:pointer;border-radius:6px;">
-          <input type="number" id="hwSize" class="pen-size" value="3" min="1" max="20" title="粗细">
-          <button class="tool-btn" onclick="clearHWCanvas()">🗑 清空</button>
+    <!-- Body -->
+    <div class="create-body" id="createBody">
+      <textarea class="create-textarea" id="createTextarea" placeholder="写下你的想法…" rows="5"></textarea>
+      <div class="create-canvas-panel" id="createCanvasPanel" style="display:none;">
+        <div class="canvas-toolbar" id="drawToolbar">
+          <button class="tool-btn active" data-tool="pen" onclick="setCVTool('pen',this)">🖊 画笔</button>
+          <button class="tool-btn" data-tool="eraser" onclick="setCVTool('eraser',this)">🧹 橡皮</button>
+          <span class="tool-sep"></span>
+          <button class="tool-btn" data-tool="rect" onclick="setCVTool('rect',this)">▭ 矩形</button>
+          <button class="tool-btn" data-tool="circle" onclick="setCVTool('circle',this)">○ 圆形</button>
+          <input type="color" id="cvColor" value="#1c1c1e" title="颜色" style="width:30px;height:30px;border:none;cursor:pointer;border-radius:7px;">
+          <input type="number" id="cvSize" class="pen-size" value="3" min="1" max="20" title="粗细">
+          <button class="tool-btn" onclick="clearCVCanvas()">🗑 清空</button>
         </div>
-        <div class="canvas-container">
-          <canvas id="hwCanvas" width="480" height="300"></canvas>
+        <div class="canvas-wrap">
+          <canvas id="cvCanvas" width="460" height="280"></canvas>
         </div>
       </div>
-      <div class="form-group">
-        <label>便签颜色</label>
-        <div class="color-options" id="hwColorOptions">
-          <span class="color-dot active bg-1" data-color="#FFF9E6" onclick="selectColor(this,'hwColorOptions')"></span>
-          <span class="color-dot bg-2" data-color="#F0F7FF" onclick="selectColor(this,'hwColorOptions')"></span>
-          <span class="color-dot bg-3" data-color="#FFF0F5" onclick="selectColor(this,'hwColorOptions')"></span>
-          <span class="color-dot bg-4" data-color="#F5FFF5" onclick="selectColor(this,'hwColorOptions')"></span>
-          <span class="color-dot bg-5" data-color="#FFF5F0" onclick="selectColor(this,'hwColorOptions')"></span>
-          <span class="color-dot bg-6" data-color="#F8F0FF" onclick="selectColor(this,'hwColorOptions')"></span>
-          <span class="color-dot bg-7" data-color="#FFFFFF" onclick="selectColor(this,'hwColorOptions')"></span>
-        </div>
+      <div class="create-image-preview" id="createImagePreview">
+        <img id="createImgEl" alt="预览">
       </div>
     </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeHandwriteModal()">取消</button>
-      <button class="btn btn-primary" onclick="submitHWSticker()">贴上去</button>
-    </div>
-  </div>
-</div>
 
-<!-- Image Modal -->
-<div class="modal-overlay" id="imageModal" style="display:none" onclick="if(event.target===this)closeImageModal()">
-  <div class="modal">
-    <div class="modal-header">
-      <h3>🖼️ 上传图片</h3>
-      <button class="modal-close" onclick="closeImageModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>你的名字</label>
-        <input type="text" class="form-input" id="imgAuthor" placeholder="输入你的名字" maxlength="30">
-      </div>
-      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('imgFile').click()">
-        <div class="upload-icon">📷</div>
-        <p>点击选择图片或拖拽到此处</p>
-        <p style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">支持 JPG / PNG / GIF / WebP</p>
-      </div>
-      <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="handleImageSelect(event)">
-      <img id="uploadPreview" class="upload-preview" alt="预览">
-      <div class="form-group">
-        <label>图片说明（可选）</label>
-        <textarea class="form-textarea" id="imgCaption" placeholder="给图片配一段文字…" rows="2"></textarea>
-      </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeImageModal()">取消</button>
-      <button class="btn btn-primary" id="imgSubmitBtn" disabled onclick="submitImageSticker()">贴上去</button>
-    </div>
-  </div>
-</div>
+    <input type="file" id="createImgFile" accept="image/*" style="display:none" onchange="handleCreateImage(event)">
 
-<!-- Drawing Modal -->
-<div class="modal-overlay" id="drawingModal" style="display:none" onclick="if(event.target===this)closeDrawingModal()">
-  <div class="modal" style="width:520px">
-    <div class="modal-header">
-      <h3>🎨 在线绘图</h3>
-      <button class="modal-close" onclick="closeDrawingModal()">✕</button>
-    </div>
-    <div class="modal-body">
-      <div class="form-group">
-        <label>你的名字</label>
-        <input type="text" class="form-input" id="drawAuthor" placeholder="输入你的名字" maxlength="30">
+    <!-- Unified footer bar: name + image + color + submit -->
+    <div class="create-footer-bar">
+      <div class="footer-row-top">
+        <input type="text" class="create-name-field" id="createName" placeholder="你的名字" maxlength="30">
+<button class="create-btn-img" id="createImageBtn" onclick="triggerImageUpload()" title="上传图片">+</button>
       </div>
-      <div class="form-group">
-        <label>绘图区域</label>
-        <div class="canvas-toolbar">
-          <button class="tool-btn active" data-tool="pen" onclick="setDrawTool('pen',this)">🖊 画笔</button>
-          <button class="tool-btn" data-tool="eraser" onclick="setDrawTool('eraser',this)">🧹 橡皮</button>
-          <button class="tool-btn" data-tool="rect" onclick="setDrawTool('rect',this)">▭ 矩形</button>
-          <button class="tool-btn" data-tool="circle" onclick="setDrawTool('circle',this)">○ 圆形</button>
-          <input type="color" id="drawColor" value="#007AFF" title="颜色" style="width:32px;height:32px;border:none;cursor:pointer;border-radius:6px;">
-          <input type="number" id="drawSize" class="pen-size" value="3" min="1" max="20" title="粗细">
-          <button class="tool-btn" onclick="clearDrawCanvas()">🗑 清空</button>
+      <div class="footer-row-bottom">
+        <div class="color-dots-inline" id="createColorDots">
+          <span class="color-dot-sm active bg-1" data-color="#FFF9E6" onclick="selectCreateColor(this)"></span>
+          <span class="color-dot-sm bg-2" data-color="#F0F7FF" onclick="selectCreateColor(this)"></span>
+          <span class="color-dot-sm bg-3" data-color="#FFF0F5" onclick="selectCreateColor(this)"></span>
+          <span class="color-dot-sm bg-4" data-color="#F5FFF5" onclick="selectCreateColor(this)"></span>
+          <span class="color-dot-sm bg-5" data-color="#FFF5F0" onclick="selectCreateColor(this)"></span>
+          <span class="color-dot-sm bg-6" data-color="#F8F0FF" onclick="selectCreateColor(this)"></span>
+          <span class="color-dot-sm bg-7" data-color="#FFFFFF" onclick="selectCreateColor(this)"></span>
         </div>
-        <div class="canvas-container" style="background:#fff;">
-          <canvas id="drawCanvas" width="480" height="340"></canvas>
+        <div class="create-footer-actions">
+          <button class="btn btn-ghost" onclick="closeCreateModal()">取消</button>
+          <button class="btn btn-primary" onclick="submitCreateSticker()">贴上去 ✨</button>
         </div>
       </div>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-ghost" onclick="closeDrawingModal()">取消</button>
-      <button class="btn btn-primary" onclick="submitDrawingSticker()">贴上去</button>
     </div>
   </div>
 </div>
@@ -640,114 +433,78 @@ html, body {
 <script>
 // ========== Globals ==========
 let stickers = [];
-let selectedImageUrl = '';
-let selectedImageFile = null;
-let pendingPosX = null, pendingPosY = null;  // 预设的点击位置
-let currentDetailId = null;                   // 当前查看详情的便签ID
+let currentDetailId = null;
+let pendingPosX = null, pendingPosY = null;
 let autoRefreshTimer = null;
 
-// Handwriting state
-let hwDrawing = false;
-let hwTool = 'pen';
-let hwCtx, hwCanvas;
+// Create modal state
+let createMode = 'text';  // 'text' | 'draw'
+let createImageFile = null;
 
-// Drawing state
-let drawDrawing = false;
-let drawTool = 'pen';
-let drawCtx, drawCanvas;
-let drawStartX, drawStartY, drawSnapshot;
+// Canvas state
+let cvDrawing = false, cvTool = 'pen';
+let cvCtx, cvCanvas;
+let cvStartX, cvStartY, cvSnapshot;
 
 // Drag state
-let dragTarget = null;
-let dragOffsetX = 0, dragOffsetY = 0;
-let dragStartX_wall = 0, dragStartY_wall = 0;
-let dragZIndex = 1;
-let hasMoved = false;          // 是否发生了拖拽移动
-const DRAG_THRESHOLD = 5;      // 像素阈值，超过才算拖拽
+let dragTarget = null, dragOffsetX = 0, dragOffsetY = 0;
+let dragStartX_wall = 0, dragStartY_wall = 0, dragZIndex = 1;
+let hasMoved = false;
+const DRAG_THRESHOLD = 5;
 
 // ========== Init ==========
 document.addEventListener('DOMContentLoaded', () => {
   refreshWall();
-  initHWCanvas();
-  initDrawCanvas();
+  initCreateCanvas();
   setupDragAndDrop();
-  setupUploadDrag();
   setupWallClick();
-  // 自动刷新：每 8 秒拉取一次数据
   autoRefreshTimer = setInterval(refreshWallSilent, 8000);
 });
 
-// ========== Auto Refresh ==========
 async function refreshWallSilent() {
-  try {
-    const res = await fetch('/api/stickers');
-    stickers = await res.json();
-    renderStickers();
-  } catch (e) { /* silent */ }
+  try { const res = await fetch('/api/stickers'); stickers = await res.json(); renderStickers(); } catch {}
 }
 
 // ========== Wall Click ==========
 function setupWallClick() {
   const wall = document.getElementById('wall');
   wall.addEventListener('click', (e) => {
-    // 如果刚结束拖拽，忽略 click
     if (dragTarget) return;
-    // 检查是否点击在 sticker 上
     if (e.target.closest('.sticker')) return;
-    // 点击空白区域 → 弹出菜单
+    if (document.getElementById('createOverlay').style.display === 'flex') return;
     const rect = wall.getBoundingClientRect();
     pendingPosX = e.clientX - rect.left;
     pendingPosY = e.clientY - rect.top;
-    // 显示点击涟漪
     showWallHint(e.clientX, e.clientY);
-    openMenu();
+    openCreateModal();
   });
 }
-
 function showWallHint(cx, cy) {
-  const hint = document.createElement('div');
-  hint.className = 'wall-hint';
-  hint.style.left = cx + 'px';
-  hint.style.top = cy + 'px';
+  const hint = document.createElement('div'); hint.className = 'wall-hint';
+  hint.style.left = cx + 'px'; hint.style.top = cy + 'px';
   document.body.appendChild(hint);
   hint.addEventListener('animationend', () => hint.remove());
 }
 
 // ========== Wall Render ==========
 async function refreshWall() {
-  try {
-    const res = await fetch('/api/stickers');
-    stickers = await res.json();
-    renderStickers();
-  } catch (e) {
-    console.error('加载便签失败:', e);
-  }
+  try { const res = await fetch('/api/stickers'); stickers = await res.json(); renderStickers(); } catch {}
 }
-
 function renderStickers() {
   const container = document.getElementById('stickers-container');
   const existing = new Map();
   container.querySelectorAll('.sticker').forEach(el => existing.set(el.dataset.id, el));
-
   stickers.forEach((s, idx) => {
     let el = existing.get(s.id);
     if (!el) {
-      el = createStickerElement(s);
-      el.classList.add('sticker-entering');
-      el.style.setProperty('--rot', s.rotation + 'deg');
-      container.appendChild(el);
+      el = createStickerElement(s); el.classList.add('sticker-entering');
+      el.style.setProperty('--rot', s.rotation + 'deg'); container.appendChild(el);
     }
     updateStickerContent(el, s);
-    el.style.left = s.pos_x + 'px';
-    el.style.top = s.pos_y + 'px';
-    el.style.width = s.width + 'px';
-    el.style.height = s.height + 'px';
-    el.style.transform = `rotate(${s.rotation}deg)`;
-    el.style.zIndex = idx + 1;
-    el.dataset.id = s.id;
+    el.style.left = s.pos_x + 'px'; el.style.top = s.pos_y + 'px';
+    el.style.width = s.width + 'px'; el.style.height = s.height + 'px';
+    el.style.transform = `rotate(${s.rotation}deg)`; el.style.zIndex = idx + 1; el.dataset.id = s.id;
   });
-
-  // Remove stale
   existing.forEach((el, id) => {
     if (!stickers.find(s => s.id === id)) {
       el.style.animation = 'stickerFadeOut 0.3s ease forwards';
@@ -755,184 +512,83 @@ function renderStickers() {
     }
   });
 }
-
 function createStickerElement(s) {
-  const el = document.createElement('div');
-  el.className = 'sticker';
-  el.dataset.id = s.id;
-  el.innerHTML = `
-    <div class="sticker-tape"></div>
-    <div class="sticker-inner">
-      <div class="sticker-author"></div>
-      <div class="sticker-date"></div>
-      <div class="sticker-content"></div>
-    </div>
-  `;
-  // 点击便签 → 打开详情（通过 mousedown + mouseup 判断是否为点击而非拖拽）
+  const el = document.createElement('div'); el.className = 'sticker'; el.dataset.id = s.id;
+  el.innerHTML = `<div class="sticker-tape"></div><div class="sticker-inner"><div class="sticker-author"></div><div class="sticker-date"></div><div class="sticker-content"></div></div>`;
   el.addEventListener('mousedown', onStickerMouseDown);
   el.addEventListener('touchstart', onStickerTouchStart, { passive: false });
   return el;
 }
-
 function updateStickerContent(el, s) {
   el.style.background = s.bg_color || '#FFF9E6';
   el.querySelector('.sticker-author').textContent = (s.author || '匿名').toUpperCase();
   el.querySelector('.sticker-date').textContent = s.created_at || '';
-  const contentDiv = el.querySelector('.sticker-content');
-  contentDiv.innerHTML = '';
-
-  // --- 动态尺寸常量 ---
-  const PAD_H = 36;       // 水平 padding (18*2)
-  const PAD_V = 90;       // 垂直 padding + 顶部 meta 信息区域
-  const MIN_W = 180, MAX_W = 270;
-  const MIN_H = 140, MAX_H = 220;
-  const LINE_H = 21.7;    // 14px * 1.55 line-height
-  const AVG_CHAR_W = 14;  // 中文字符约为14px宽
+  const contentDiv = el.querySelector('.sticker-content'); contentDiv.innerHTML = '';
+  const PAD_H = 36, PAD_V = 90, MIN_W = 180, MAX_W = 270, MIN_H = 140, MAX_H = 220;
+  const LINE_H = 21.7, AVG_CHAR_W = 14;
 
   if (s.content_type === 'text') {
     const text = s.text_content || '';
-    // 将文字包在 .text-body 中，让 CSS line-clamp 截断+省略号
-    const span = document.createElement('span');
-    span.className = 'text-body';
-    span.textContent = text;
-    contentDiv.appendChild(span);
-
-    // 按内容估算行宽与行数，动态调整便签尺寸
-    const lines = text.split('\n');
-    let maxLineChars = 0;
-    lines.forEach(line => { if (line.length > maxLineChars) maxLineChars = line.length; });
-    const contentW = Math.min(MAX_W, Math.max(MIN_W, maxLineChars * AVG_CHAR_W + 20));
-    const totalLines = lines.reduce((c, line) => c + Math.max(1, Math.ceil(line.length * AVG_CHAR_W / contentW)), 0);
-    const contentH = Math.min(MAX_H, Math.max(MIN_H, totalLines * LINE_H + 20));
-
-    el.style.width = contentW + 'px';
-    el.style.height = contentH + 'px';
-    s.width = contentW;
-    s.height = contentH;
-
-  } else if (s.content_type === 'handwriting' || s.content_type === 'drawing') {
-    const isHW = s.content_type === 'handwriting';
-    const strokes = isHW ? s.handwriting_data : s.drawing_data;
-    const MAX_W_CV = isHW ? 300 : 320;
-    const MAX_H_CV = isHW ? 280 : 300;
-
-    // 根据笔画数据计算包围盒
+    const span = document.createElement('span'); span.className = 'text-body'; span.textContent = text; contentDiv.appendChild(span);
+    const lines = text.split('\n'); let maxL = 0; lines.forEach(l => { if (l.length > maxL) maxL = l.length; });
+    const cw = Math.min(MAX_W, Math.max(MIN_W, maxL * AVG_CHAR_W + 20));
+    const tl = lines.reduce((c, l) => c + Math.max(1, Math.ceil(l.length * AVG_CHAR_W / cw)), 0);
+    const ch = Math.min(MAX_H, Math.max(MIN_H, tl * LINE_H + 20));
+    el.style.width = cw + 'px'; el.style.height = ch + 'px'; s.width = cw; s.height = ch;
+  } else if (s.content_type === 'drawing' || s.content_type === 'handwriting') {
+    const strokes = s.content_type === 'handwriting' ? s.handwriting_data : s.drawing_data;
+    const MX = s.content_type === 'handwriting' ? 300 : 320, MH = s.content_type === 'handwriting' ? 280 : 300;
     let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
     if (strokes && Array.isArray(strokes)) {
-      strokes.forEach(st => {
-        if (st.points) st.points.forEach(([px, py]) => {
-          if (px < minX) minX = px; if (py < minY) minY = py;
-          if (px > maxX) maxX = px; if (py > maxY) maxY = py;
-        });
-      });
+      strokes.forEach(st => { if (st.points) st.points.forEach(([px, py]) => { if (px < minX) minX = px; if (py < minY) minY = py; if (px > maxX) maxX = px; if (py > maxY) maxY = py; }); });
     }
-    const hasContent = isFinite(minX);
-    const bbW = hasContent ? maxX - minX + 24 : 140;
-    const bbH = hasContent ? maxY - minY + 24 : 120;
-
-    const cvsW = Math.min(MAX_W_CV - PAD_H, Math.max(MIN_W - PAD_H, Math.round(bbW)));
-    const cvsH = Math.min(MAX_H_CV - PAD_V, Math.max(MIN_H - PAD_V, Math.round(bbH)));
-
-    if (hasContent) {
-      const cvs = document.createElement('canvas');
-      cvs.width = cvsW;
-      cvs.height = cvsH;
-      cvs.style.width = '100%';
-      cvs.style.height = 'auto';
+    const has = isFinite(minX);
+    const bbW = has ? maxX - minX + 24 : 140, bbH = has ? maxY - minY + 24 : 120;
+    const cvsW = Math.min(MX - PAD_H, Math.max(MIN_W - PAD_H, Math.round(bbW)));
+    const cvsH = Math.min(MH - PAD_V, Math.max(MIN_H - PAD_V, Math.round(bbH)));
+    if (has) {
+      const cvs = document.createElement('canvas'); cvs.width = cvsW; cvs.height = cvsH; cvs.style.width = '100%'; cvs.style.height = 'auto';
       const ctx = cvs.getContext('2d');
-      // 缩放到包围盒内
-      const scale = Math.min(cvsW / bbW, cvsH / bbH) * 0.9;
-      const offsetX = (cvsW - bbW * scale) / 2 - minX * scale;
-      const offsetY = (cvsH - bbH * scale) / 2 - minY * scale;
-      ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+      const sc = Math.min(cvsW / bbW, cvsH / bbH) * 0.9;
+      ctx.setTransform(sc, 0, 0, sc, (cvsW - bbW * sc) / 2 - minX * sc, (cvsH - bbH * sc) / 2 - minY * sc);
       renderStrokes(ctx, strokes);
       ctx.setTransform(1, 0, 0, 1, 0, 0);
       contentDiv.appendChild(cvs);
     }
-
-    const finalW = cvsW + PAD_H;
-    const finalH = cvsH + PAD_V;
-    el.style.width = finalW + 'px';
-    el.style.height = finalH + 'px';
-    s.width = finalW;
-    s.height = finalH;
-
+    el.style.width = (cvsW + PAD_H) + 'px'; el.style.height = (cvsH + PAD_V) + 'px';
+    s.width = cvsW + PAD_H; s.height = cvsH + PAD_V;
   } else if (s.content_type === 'image') {
-    const MAX_W_IMG = 290, MAX_H_IMG = 300;
-
+    const MX = 290, MH = 300;
     if (s.image_path) {
-      const img = document.createElement('img');
-      img.src = s.image_path;
-      img.alt = '图片';
-      img.loading = 'lazy';
-      img.style.maxWidth = '100%';
-      img.style.borderRadius = 'var(--radius-sm)';
-      img.style.objectFit = 'contain';
-      // 让图片适应便签内容区
-      const availW = MAX_W_IMG - PAD_H;
-      const availH = MAX_H_IMG - PAD_V;
-      img.style.maxWidth = availW + 'px';
-      img.style.maxHeight = (s.text_content ? availH * 0.7 : availH) + 'px';
+      const img = document.createElement('img'); img.src = s.image_path; img.alt = '图片'; img.loading = 'lazy';
+      img.style.maxWidth = (MX - PAD_H) + 'px'; img.style.maxHeight = (s.text_content ? (MH - PAD_V) * 0.7 : MH - PAD_V) + 'px';
+      img.style.objectFit = 'contain'; img.style.borderRadius = 'var(--radius-sm)';
       contentDiv.appendChild(img);
     }
     if (s.text_content) {
-      const p = document.createElement('p');
-      p.textContent = s.text_content;
-      p.style.marginTop = '6px';
-      p.style.fontSize = '12px';
-      p.style.color = 'var(--text-secondary)';
-      p.style.overflow = 'hidden';
-      p.style.textOverflow = 'ellipsis';
-      p.style.display = '-webkit-box';
-      p.style.WebkitLineClamp = '2';
-      p.style.WebkitBoxOrient = 'vertical';
+      const p = document.createElement('p'); p.textContent = s.text_content;
+      p.style.cssText = 'margin-top:6px;font-size:12px;color:var(--text-secondary);overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical';
       contentDiv.appendChild(p);
     }
-    // 图片便签暂时保持固定最大值，后续可优化
-    el.style.width = MAX_W_IMG + 'px';
-    el.style.height = MAX_H_IMG + 'px';
-    s.width = MAX_W_IMG;
-    s.height = MAX_H_IMG;
+    el.style.width = MX + 'px'; el.style.height = MH + 'px'; s.width = MX; s.height = MH;
   }
 }
-
 function renderStrokes(ctx, strokes) {
   if (!strokes || !Array.isArray(strokes)) return;
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
   strokes.forEach(stroke => {
     if (!stroke.points || stroke.points.length === 0) return;
-    ctx.beginPath();
-    ctx.strokeStyle = stroke.color || '#1c1c1e';
-    ctx.lineWidth = stroke.size || 3;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    if (stroke.tool === 'eraser') {
-      ctx.globalCompositeOperation = 'destination-out';
-      ctx.lineWidth = (stroke.size || 3) * 4;
-    } else {
-      ctx.globalCompositeOperation = 'source-over';
-    }
+    ctx.beginPath(); ctx.strokeStyle = stroke.color || '#1c1c1e'; ctx.lineWidth = stroke.size || 3;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    ctx.globalCompositeOperation = stroke.tool === 'eraser' ? 'destination-out' : 'source-over';
+    if (stroke.tool === 'eraser') ctx.lineWidth = (stroke.size || 3) * 4;
     if (stroke.shape && stroke.points.length >= 2) {
-      const [sx, sy] = stroke.points[0];
-      const [ex, ey] = stroke.points[stroke.points.length - 1];
-      const w = ex - sx;
-      const h = ey - sy;
-      if (stroke.shape === 'rect') {
-        ctx.strokeRect(sx, sy, w, h);
-      } else if (stroke.shape === 'circle') {
-        const rx = Math.abs(w) / 2;
-        const ry = Math.abs(h) / 2;
-        const cx = sx + w / 2;
-        const cy = sy + h / 2;
-        ctx.beginPath();
-        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-        ctx.stroke();
-      }
+      const [sx, sy] = stroke.points[0], [ex, ey] = stroke.points[stroke.points.length - 1];
+      if (stroke.shape === 'rect') ctx.strokeRect(sx, sy, ex - sx, ey - sy);
+      else if (stroke.shape === 'circle') { const rx = Math.abs(ex - sx) / 2, ry = Math.abs(ey - sy) / 2; ctx.beginPath(); ctx.ellipse(sx + (ex - sx) / 2, sy + (ey - sy) / 2, rx, ry, 0, 0, Math.PI * 2); ctx.stroke(); }
     } else {
       ctx.moveTo(stroke.points[0][0], stroke.points[0][1]);
-      for (let i = 1; i < stroke.points.length; i++) {
-        ctx.lineTo(stroke.points[i][0], stroke.points[i][1]);
-      }
+      for (let i = 1; i < stroke.points.length; i++) ctx.lineTo(stroke.points[i][0], stroke.points[i][1]);
       ctx.stroke();
     }
     ctx.globalCompositeOperation = 'source-over';
@@ -940,695 +596,188 @@ function renderStrokes(ctx, strokes) {
 }
 
 // ========== Detail View ==========
-function openDetail(stickerId) {
-  const s = stickers.find(st => st.id === stickerId);
-  if (!s) return;
-  currentDetailId = stickerId;
+function openDetail(id) {
+  const s = stickers.find(st => st.id === id); if (!s) return;
+  currentDetailId = id;
   document.getElementById('detailAuthor').textContent = (s.author || '匿名').toUpperCase();
   document.getElementById('detailDate').textContent = s.created_at || '';
-  const body = document.getElementById('detailBody');
-  body.innerHTML = '';
-
-  if (s.content_type === 'text') {
-    const div = document.createElement('div');
-    div.className = 'text-content';
-    div.textContent = s.text_content || '';
-    body.appendChild(div);
-  } else if (s.content_type === 'image') {
-    if (s.image_path) {
-      const img = document.createElement('img');
-      img.src = s.image_path;
-      img.alt = '图片';
-      img.style.width = '100%';
-      body.appendChild(img);
-    }
-    if (s.text_content) {
-      const p = document.createElement('p');
-      p.textContent = s.text_content;
-      p.style.marginTop = '12px';
-      p.style.fontSize = '14px';
-      p.style.color = 'var(--text-secondary)';
-      body.appendChild(p);
-    }
-  } else if (s.content_type === 'handwriting' && s.handwriting_data) {
-    const cvs = document.createElement('canvas');
-    cvs.width = 480;
-    cvs.height = 300;
-    cvs.style.width = '100%';
-    cvs.style.height = 'auto';
-    const ctx = cvs.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, cvs.width, cvs.height);
-    renderStrokes(ctx, s.handwriting_data);
-    body.appendChild(cvs);
-  } else if (s.content_type === 'drawing' && s.drawing_data) {
-    const cvs = document.createElement('canvas');
-    cvs.width = 480;
-    cvs.height = 340;
-    cvs.style.width = '100%';
-    cvs.style.height = 'auto';
-    const ctx = cvs.getContext('2d');
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, cvs.width, cvs.height);
-    renderStrokes(ctx, s.drawing_data);
-    body.appendChild(cvs);
+  const body = document.getElementById('detailBody'); body.innerHTML = '';
+  if (s.content_type === 'text') { const d = document.createElement('div'); d.className = 'text-content'; d.textContent = s.text_content || ''; body.appendChild(d); }
+  else if (s.content_type === 'image') {
+    if (s.image_path) { const img = document.createElement('img'); img.src = s.image_path; img.alt = '图片'; img.style.width = '100%'; body.appendChild(img); }
+    if (s.text_content) { const p = document.createElement('p'); p.textContent = s.text_content; p.style.cssText = 'margin-top:12px;font-size:14px;color:var(--text-secondary)'; body.appendChild(p); }
+  } else if ((s.content_type === 'handwriting' || s.content_type === 'drawing') && (s.handwriting_data || s.drawing_data)) {
+    const strokes = s.handwriting_data || s.drawing_data;
+    const cvs = document.createElement('canvas'); cvs.width = 480; cvs.height = s.content_type === 'handwriting' ? 300 : 340;
+    cvs.style.width = '100%'; cvs.style.height = 'auto';
+    const ctx = cvs.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cvs.width, cvs.height);
+    renderStrokes(ctx, strokes); body.appendChild(cvs);
   }
-
   document.getElementById('detailOverlay').style.display = 'flex';
 }
-
-function closeDetail() {
-  document.getElementById('detailOverlay').style.display = 'none';
-  currentDetailId = null;
-}
-
-async function deleteFromDetail() {
-  if (!currentDetailId) return;
-  await deleteSticker(currentDetailId);
-  closeDetail();
-}
+function closeDetail() { document.getElementById('detailOverlay').style.display = 'none'; currentDetailId = null; }
+async function deleteFromDetail() { if (!currentDetailId) return; await deleteSticker(currentDetailId); closeDetail(); }
 
 // ========== Sticker CRUD ==========
-async function saveSticker(data) {
-  const res = await fetch('/api/stickers', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data)
+async function saveSticker(data) { const r = await fetch('/api/stickers', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }); if (!r.ok) throw new Error('fail'); return r.json(); }
+async function removeSticker(id) { await fetch(`/api/stickers/${id}`, { method: 'DELETE' }); }
+async function updateStickerPos(id, x, y) { await fetch(`/api/stickers/${id}`, { method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pos_x: x, pos_y: y }) }); }
+async function deleteSticker(id) { await removeSticker(id); stickers = stickers.filter(s => s.id !== id); renderStickers(); showToast('便签已删除'); }
+
+// ========== Create Modal ==========
+function openCreateModal() {
+  document.getElementById('createOverlay').style.display = 'flex';
+  resetCreateModal();
+  document.getElementById('createName').focus();
+}
+function closeCreateModal() { document.getElementById('createOverlay').style.display = 'none'; resetCreateModal(); pendingPosX = null; pendingPosY = null; }
+function resetCreateModal() {
+  document.getElementById('createTextarea').value = '';
+  document.getElementById('createName').value = '';
+  clearCVCanvas();
+  createImageFile = null;
+  document.getElementById('createImagePreview').style.display = 'none';
+  document.getElementById('createImgFile').value = '';
+  document.getElementById('modeToggle').style.display = '';
+  setCreateMode('text');
+}
+function setCreateMode(mode) {
+  createMode = mode;
+  document.querySelectorAll('#modeToggle .toggle-option').forEach(b => {
+    b.classList.toggle('active', b.dataset.mode === mode);
   });
-  if (!res.ok) throw new Error('保存失败');
-  return await res.json();
+  document.getElementById('createTextarea').style.display = mode === 'text' ? '' : 'none';
+  document.getElementById('createCanvasPanel').style.display = mode === 'draw' ? '' : 'none';
+  if (mode === 'draw') { initCreateCanvas(); } else { clearCVCanvas(); }
 }
 
-async function removeSticker(id) {
-  await fetch(`/api/stickers/${id}`, { method: 'DELETE' });
+// ========== Create Canvas ==========
+function initCreateCanvas() {
+  cvCanvas = document.getElementById('cvCanvas');
+  if (!cvCanvas) return;
+  cvCtx = cvCanvas.getContext('2d');
+  cvCtx.fillStyle = '#fff'; cvCtx.fillRect(0, 0, cvCanvas.width, cvCanvas.height);
+  cvCtx.lineCap = 'round'; cvCtx.lineJoin = 'round';
+  cvCanvas._strokes = []; cvCanvas._current = null;
+
+  cvCanvas.onmousedown = (e) => { cvDrawing = true; const p = getCVPos(e); cvStartX = p.x; cvStartY = p.y; cvSnapshot = cvCtx.getImageData(0, 0, cvCanvas.width, cvCanvas.height);
+    cvCanvas._current = { tool: cvTool, color: cvTool === 'eraser' ? '#fff' : document.getElementById('cvColor').value,
+      size: parseInt(document.getElementById('cvSize').value) || 3, points: [[p.x, p.y]] };
+    if (cvTool === 'pen' || cvTool === 'eraser') { cvCtx.beginPath(); cvCtx.moveTo(p.x, p.y); }
+  };
+  cvCanvas.onmousemove = (e) => { if (!cvDrawing) return; const p = getCVPos(e); const s = cvCanvas._current; s.points.push([p.x, p.y]);
+    if (cvTool === 'pen' || cvTool === 'eraser') drawCVSegment(s);
+    else { cvCtx.putImageData(cvSnapshot, 0, 0); cvCtx.save(); cvCtx.strokeStyle = s.color; cvCtx.lineWidth = s.size;
+      const w = p.x - cvStartX, h = p.y - cvStartY;
+      if (cvTool === 'rect') cvCtx.strokeRect(cvStartX, cvStartY, w, h);
+      else if (cvTool === 'circle') { const rx = Math.abs(w) / 2, ry = Math.abs(h) / 2; cvCtx.beginPath(); cvCtx.ellipse(cvStartX + w / 2, cvStartY + h / 2, rx, ry, 0, 0, Math.PI * 2); cvCtx.stroke(); }
+      cvCtx.restore();
+    }
+  };
+  cvCanvas.onmouseup = cvCanvas.onmouseleave = endCVDraw;
+  cvCanvas.addEventListener('touchstart', (e) => { e.preventDefault(); const t = e.touches[0]; cvCanvas.onmousedown({ clientX: t.clientX, clientY: t.clientY }); }, { passive: false });
+  cvCanvas.addEventListener('touchmove', (e) => { e.preventDefault(); const t = e.touches[0]; cvCanvas.onmousemove({ clientX: t.clientX, clientY: t.clientY }); }, { passive: false });
+  cvCanvas.addEventListener('touchend', endCVDraw);
+}
+function getCVPos(e) { const r = cvCanvas.getBoundingClientRect(); return { x: (e.clientX - r.left) * cvCanvas.width / r.width, y: (e.clientY - r.top) * cvCanvas.height / r.height }; }
+function endCVDraw() { if (!cvDrawing) return; cvDrawing = false; if (cvCanvas._current && cvCanvas._current.points.length > 0) { if (cvTool === 'rect' || cvTool === 'circle') cvCanvas._current.shape = cvTool; cvCanvas._strokes.push(cvCanvas._current); } cvCanvas._current = null; }
+function drawCVSegment(s) {
+  cvCtx.save(); cvCtx.strokeStyle = s.color; cvCtx.lineWidth = s.size;
+  cvCtx.globalCompositeOperation = s.tool === 'eraser' ? 'destination-out' : 'source-over';
+  if (s.tool === 'eraser') cvCtx.lineWidth = s.size * 4;
+  cvCtx.beginPath(); const pts = s.points;
+  if (pts.length === 1) { cvCtx.arc(pts[0][0], pts[0][1], s.size / 2, 0, Math.PI * 2); cvCtx.fillStyle = s.color; cvCtx.fill(); }
+  else { cvCtx.moveTo(pts[pts.length - 2][0], pts[pts.length - 2][1]); cvCtx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]); cvCtx.stroke(); }
+  cvCtx.restore();
+}
+function setCVTool(tool, btn) { cvTool = tool; btn.parentElement.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active')); btn.classList.add('active'); }
+function clearCVCanvas() { if (cvCtx) { cvCtx.clearRect(0, 0, cvCanvas.width, cvCanvas.height); cvCtx.fillStyle = '#fff'; cvCtx.fillRect(0, 0, cvCanvas.width, cvCanvas.height); cvCanvas._strokes = []; } }
+
+// ========== Image Upload in Create Modal ==========
+function triggerImageUpload() { document.getElementById('createImgFile').click(); }
+function handleCreateImage(e) {
+  if (e.target.files.length === 0) return;
+  createImageFile = e.target.files[0];
+  const reader = new FileReader();
+  reader.onload = ev => {
+    document.getElementById('createImgEl').src = ev.target.result;
+    document.getElementById('createImagePreview').style.display = 'flex';
+    // 隐藏文字/绘图编辑区，只显示图片预览
+    document.getElementById('createTextarea').style.display = 'none';
+    document.getElementById('createCanvasPanel').style.display = 'none';
+    document.getElementById('modeToggle').style.display = 'none';
+  };
+  reader.readAsDataURL(createImageFile);
 }
 
-async function updateStickerPos(id, pos_x, pos_y) {
-  await fetch(`/api/stickers/${id}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ pos_x, pos_y })
-  });
-}
+// ========== Submit ==========
+async function submitCreateSticker() {
+  const author = document.getElementById('createName').value.trim() || '匿名';
+  const pos = getCreatePos();
+  let data;
 
-async function deleteSticker(id) {
-  await removeSticker(id);
-  stickers = stickers.filter(s => s.id !== id);
-  renderStickers();
-  showToast('便签已删除');
-}
-
-// ========== Position helpers ==========
-function getPendingPos() {
-  if (pendingPosX !== null && pendingPosY !== null) {
-    const p = { x: pendingPosX - 135, y: pendingPosY - 110, rot: (Math.random() - 0.5) * 4 };
-    pendingPosX = null; pendingPosY = null;
-    return p;
+  if (createImageFile) {
+    const fd = new FormData(); fd.append('file', createImageFile);
+    let url = '';
+    try { const ur = await fetch('/api/upload', { method: 'POST', body: fd }); if (!ur.ok) throw new Error(); url = (await ur.json()).url; } catch { showToast('图片上传失败'); return; }
+    data = { content_type: 'image', author, image_path: url, text_content: '', bg_color: getCreateSelectedColor(), pos_x: pos.x, pos_y: pos.y, rotation: pos.rot, width: 290, height: 300 };
+  } else if (createMode === 'text') {
+    const text = document.getElementById('createTextarea').value.trim();
+    if (!text) { showToast('请输入内容'); return; }
+    data = { content_type: 'text', author, text_content: text, bg_color: getCreateSelectedColor(), pos_x: pos.x, pos_y: pos.y, rotation: pos.rot, width: 270, height: 220 };
+  } else {
+    if (!cvCanvas._strokes || cvCanvas._strokes.length === 0) { showToast('请先画点什么'); return; }
+    data = { content_type: 'drawing', author, drawing_data: JSON.parse(JSON.stringify(cvCanvas._strokes)), bg_color: '#FFFFFF', pos_x: pos.x, pos_y: pos.y, rotation: pos.rot, width: 320, height: 300 };
   }
+
+  try {
+    const s = await saveSticker(data); stickers.unshift(s);
+    closeCreateModal(); renderStickers(); showToast('便签已贴上 ✨');
+  } catch { showToast('保存失败，请重试'); }
+}
+
+function getCreatePos() {
+  if (pendingPosX !== null && pendingPosY !== null) { const p = { x: pendingPosX - 135, y: pendingPosY - 110, rot: (Math.random() - 0.5) * 4 }; pendingPosX = null; pendingPosY = null; return p; }
   return randomPos();
 }
-
 function randomPos() {
-  const wall = document.getElementById('wall');
-  const w = wall.clientWidth;
-  const h = wall.clientHeight;
-  return {
-    x: 40 + Math.random() * Math.max(0, w - 340),
-    y: 20 + Math.random() * Math.max(0, h - 380),
-    rot: (Math.random() - 0.5) * 6
-  };
+  const w = document.getElementById('wall').clientWidth, h = document.getElementById('wall').clientHeight;
+  return { x: 40 + Math.random() * Math.max(0, w - 340), y: 20 + Math.random() * Math.max(0, h - 380), rot: (Math.random() - 0.5) * 6 };
 }
+function getCreateSelectedColor() { const a = document.querySelector('#createColorDots .color-dot-sm.active'); return a ? a.dataset.color : '#FFF9E6'; }
+function selectCreateColor(dot) { document.querySelectorAll('#createColorDots .color-dot-sm').forEach(d => d.classList.remove('active')); dot.classList.add('active'); }
 
-// ========== Menu ==========
-function openMenu() {
-  document.getElementById('menuOverlay').style.display = 'flex';
-}
-function closeMenu(e) {
-  if (e && e.target !== document.getElementById('menuOverlay')) return;
-  document.getElementById('menuOverlay').style.display = 'none';
-  // 如果用户取消菜单，清除预设位置
-  pendingPosX = null;
-  pendingPosY = null;
-}
-
-// ========== Text Sticker ==========
-function openTextModal() {
-  closeMenu();
-  document.getElementById('textModal').style.display = 'flex';
-  document.getElementById('textAuthor').focus();
-}
-function closeTextModal() {
-  document.getElementById('textModal').style.display = 'none';
-  document.getElementById('textContent').value = '';
-}
-async function submitTextSticker() {
-  const author = document.getElementById('textAuthor').value.trim() || '匿名';
-  const content = document.getElementById('textContent').value.trim();
-  if (!content) { showToast('请输入内容'); return; }
-  const color = getSelectedColor('textColorOptions');
-  const pos = getPendingPos();
-  const data = {
-    content_type: 'text',
-    author,
-    text_content: content,
-    bg_color: color,
-    pos_x: pos.x,
-    pos_y: pos.y,
-    rotation: pos.rot,
-    width: 270,
-    height: 220
-  };
-  try {
-    const s = await saveSticker(data);
-    stickers.unshift(s);
-    closeTextModal();
-    document.getElementById('textContent').value = '';
-    renderStickers();
-    showToast('便签已贴上 ✨');
-  } catch (e) {
-    showToast('保存失败，请重试');
-  }
-}
-
-// ========== Handwrite Canvas ==========
-function initHWCanvas() {
-  hwCanvas = document.getElementById('hwCanvas');
-  hwCtx = hwCanvas.getContext('2d');
-  hwCtx.fillStyle = '#ffffff';
-  hwCtx.fillRect(0, 0, hwCanvas.width, hwCanvas.height);
-  hwCtx.lineCap = 'round';
-  hwCtx.lineJoin = 'round';
-  hwCanvas._strokes = [];
-  hwCanvas._currentStroke = null;
-
-  hwCanvas.addEventListener('mousedown', startHW);
-  hwCanvas.addEventListener('mousemove', moveHW);
-  hwCanvas.addEventListener('mouseup', endHW);
-  hwCanvas.addEventListener('mouseleave', endHW);
-  hwCanvas.addEventListener('touchstart', startHWTouch, { passive: false });
-  hwCanvas.addEventListener('touchmove', moveHWTouch, { passive: false });
-  hwCanvas.addEventListener('touchend', endHW);
-}
-
-function getHWCanvasPos(e) {
-  const rect = hwCanvas.getBoundingClientRect();
-  const scaleX = hwCanvas.width / rect.width;
-  const scaleY = hwCanvas.height / rect.height;
-  return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
-}
-
-function startHW(e) {
-  hwDrawing = true;
-  const p = getHWCanvasPos(e);
-  hwCanvas._currentStroke = {
-    tool: hwTool,
-    color: hwTool === 'eraser' ? '#ffffff' : document.getElementById('hwColor').value,
-    size: parseInt(document.getElementById('hwSize').value) || 3,
-    points: [[p.x, p.y]]
-  };
-  hwCtx.beginPath();
-  hwCtx.moveTo(p.x, p.y);
-}
-function startHWTouch(e) {
-  e.preventDefault();
-  const touch = e.touches[0];
-  startHW({ clientX: touch.clientX, clientY: touch.clientY });
-}
-function moveHW(e) {
-  if (!hwDrawing) return;
-  const p = getHWCanvasPos(e);
-  const s = hwCanvas._currentStroke;
-  s.points.push([p.x, p.y]);
-  drawHWStrokeSegment(s);
-}
-function moveHWTouch(e) {
-  e.preventDefault();
-  if (!hwDrawing) return;
-  const touch = e.touches[0];
-  moveHW({ clientX: touch.clientX, clientY: touch.clientY });
-}
-function endHW() {
-  if (!hwDrawing) return;
-  hwDrawing = false;
-  if (hwCanvas._currentStroke && hwCanvas._currentStroke.points.length > 0) {
-    hwCanvas._strokes.push(hwCanvas._currentStroke);
-  }
-  hwCanvas._currentStroke = null;
-}
-function drawHWStrokeSegment(s) {
-  hwCtx.save();
-  hwCtx.strokeStyle = s.color;
-  hwCtx.lineWidth = s.size;
-  if (s.tool === 'eraser') {
-    hwCtx.globalCompositeOperation = 'destination-out';
-    hwCtx.lineWidth = s.size * 4;
-  } else {
-    hwCtx.globalCompositeOperation = 'source-over';
-  }
-  hwCtx.beginPath();
-  const pts = s.points;
-  if (pts.length === 1) {
-    hwCtx.arc(pts[0][0], pts[0][1], s.size / 2, 0, Math.PI * 2);
-    hwCtx.fillStyle = s.color;
-    hwCtx.fill();
-  } else {
-    hwCtx.moveTo(pts[pts.length - 2][0], pts[pts.length - 2][1]);
-    hwCtx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
-    hwCtx.stroke();
-  }
-  hwCtx.restore();
-}
-function setHWTool(tool, btn) {
-  hwTool = tool;
-  btn.parentElement.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-function clearHWCanvas() {
-  hwCtx.clearRect(0, 0, hwCanvas.width, hwCanvas.height);
-  hwCtx.fillStyle = '#ffffff';
-  hwCtx.fillRect(0, 0, hwCanvas.width, hwCanvas.height);
-  hwCanvas._strokes = [];
-}
-
-function openHandwriteModal() {
-  closeMenu();
-  document.getElementById('handwriteModal').style.display = 'flex';
-  clearHWCanvas();
-  document.getElementById('hwAuthor').focus();
-}
-function closeHandwriteModal() {
-  document.getElementById('handwriteModal').style.display = 'none';
-  clearHWCanvas();
-}
-async function submitHWSticker() {
-  if (hwCanvas._strokes.length === 0) { showToast('请先手写内容'); return; }
-  const author = document.getElementById('hwAuthor').value.trim() || '匿名';
-  const color = getSelectedColor('hwColorOptions');
-  const pos = getPendingPos();
-  const data = {
-    content_type: 'handwriting',
-    author,
-    handwriting_data: JSON.parse(JSON.stringify(hwCanvas._strokes)),
-    bg_color: color,
-    pos_x: pos.x,
-    pos_y: pos.y,
-    rotation: pos.rot,
-    width: 300,
-    height: 280
-  };
-  try {
-    const s = await saveSticker(data);
-    stickers.unshift(s);
-    closeHandwriteModal();
-    renderStickers();
-    showToast('手写便签已贴上 ✨');
-  } catch (e) {
-    showToast('保存失败，请重试');
-  }
-}
-
-// ========== Draw Canvas ==========
-function initDrawCanvas() {
-  drawCanvas = document.getElementById('drawCanvas');
-  drawCtx = drawCanvas.getContext('2d');
-  drawCtx.fillStyle = '#ffffff';
-  drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
-  drawCtx.lineCap = 'round';
-  drawCtx.lineJoin = 'round';
-  drawCanvas._strokes = [];
-  drawCanvas._currentStroke = null;
-
-  drawCanvas.addEventListener('mousedown', startDraw);
-  drawCanvas.addEventListener('mousemove', moveDraw);
-  drawCanvas.addEventListener('mouseup', endDraw);
-  drawCanvas.addEventListener('mouseleave', endDraw);
-  drawCanvas.addEventListener('touchstart', startDrawTouch, { passive: false });
-  drawCanvas.addEventListener('touchmove', moveDrawTouch, { passive: false });
-  drawCanvas.addEventListener('touchend', endDraw);
-}
-
-function getDrawCanvasPos(e) {
-  const rect = drawCanvas.getBoundingClientRect();
-  const scaleX = drawCanvas.width / rect.width;
-  const scaleY = drawCanvas.height / rect.height;
-  return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
-}
-
-function startDraw(e) {
-  drawDrawing = true;
-  const p = getDrawCanvasPos(e);
-  drawStartX = p.x;
-  drawStartY = p.y;
-  drawSnapshot = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
-  drawCanvas._currentStroke = {
-    tool: drawTool,
-    color: drawTool === 'eraser' ? '#ffffff' : document.getElementById('drawColor').value,
-    size: parseInt(document.getElementById('drawSize').value) || 3,
-    points: [[p.x, p.y]]
-  };
-  if (drawTool === 'pen' || drawTool === 'eraser') {
-    drawCtx.beginPath();
-    drawCtx.moveTo(p.x, p.y);
-  }
-}
-function startDrawTouch(e) {
-  e.preventDefault();
-  const touch = e.touches[0];
-  startDraw({ clientX: touch.clientX, clientY: touch.clientY });
-}
-function moveDraw(e) {
-  if (!drawDrawing) return;
-  const p = getDrawCanvasPos(e);
-  const s = drawCanvas._currentStroke;
-  s.points.push([p.x, p.y]);
-  if (drawTool === 'pen' || drawTool === 'eraser') {
-    drawDrawStrokeSegment(s);
-  } else {
-    drawCtx.putImageData(drawSnapshot, 0, 0);
-    drawCtx.save();
-    drawCtx.strokeStyle = s.color;
-    drawCtx.lineWidth = s.size;
-    const w = p.x - drawStartX;
-    const h = p.y - drawStartY;
-    if (drawTool === 'rect') {
-      drawCtx.strokeRect(drawStartX, drawStartY, w, h);
-    } else if (drawTool === 'circle') {
-      const rx = Math.abs(w) / 2;
-      const ry = Math.abs(h) / 2;
-      const cx = drawStartX + w / 2;
-      const cy = drawStartY + h / 2;
-      drawCtx.beginPath();
-      drawCtx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
-      drawCtx.stroke();
-    }
-    drawCtx.restore();
-  }
-}
-function moveDrawTouch(e) {
-  e.preventDefault();
-  if (!drawDrawing) return;
-  const touch = e.touches[0];
-  moveDraw({ clientX: touch.clientX, clientY: touch.clientY });
-}
-function endDraw() {
-  if (!drawDrawing) return;
-  drawDrawing = false;
-  if (drawCanvas._currentStroke && drawCanvas._currentStroke.points.length > 0) {
-    if (drawTool === 'rect' || drawTool === 'circle') {
-      drawCanvas._currentStroke.shape = drawTool;
-    }
-    drawCanvas._strokes.push(drawCanvas._currentStroke);
-  }
-  drawCanvas._currentStroke = null;
-}
-function drawDrawStrokeSegment(s) {
-  drawCtx.save();
-  drawCtx.strokeStyle = s.color;
-  drawCtx.lineWidth = s.size;
-  if (s.tool === 'eraser') {
-    drawCtx.globalCompositeOperation = 'destination-out';
-    drawCtx.lineWidth = s.size * 4;
-  } else {
-    drawCtx.globalCompositeOperation = 'source-over';
-  }
-  drawCtx.beginPath();
-  const pts = s.points;
-  if (pts.length === 1) {
-    drawCtx.arc(pts[0][0], pts[0][1], s.size / 2, 0, Math.PI * 2);
-    drawCtx.fillStyle = s.color;
-    drawCtx.fill();
-  } else {
-    drawCtx.moveTo(pts[pts.length - 2][0], pts[pts.length - 2][1]);
-    drawCtx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
-    drawCtx.stroke();
-  }
-  drawCtx.restore();
-}
-function setDrawTool(tool, btn) {
-  drawTool = tool;
-  btn.parentElement.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
-}
-function clearDrawCanvas() {
-  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
-  drawCtx.fillStyle = '#ffffff';
-  drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
-  drawCanvas._strokes = [];
-}
-
-function openDrawingModal() {
-  closeMenu();
-  document.getElementById('drawingModal').style.display = 'flex';
-  clearDrawCanvas();
-  document.getElementById('drawAuthor').focus();
-}
-function closeDrawingModal() {
-  document.getElementById('drawingModal').style.display = 'none';
-  clearDrawCanvas();
-}
-async function submitDrawingSticker() {
-  if (drawCanvas._strokes.length === 0) { showToast('请先画点什么'); return; }
-  const author = document.getElementById('drawAuthor').value.trim() || '匿名';
-  const pos = getPendingPos();
-  const data = {
-    content_type: 'drawing',
-    author,
-    drawing_data: JSON.parse(JSON.stringify(drawCanvas._strokes)),
-    bg_color: '#FFFFFF',
-    pos_x: pos.x,
-    pos_y: pos.y,
-    rotation: pos.rot,
-    width: 320,
-    height: 300
-  };
-  try {
-    const s = await saveSticker(data);
-    stickers.unshift(s);
-    closeDrawingModal();
-    renderStickers();
-    showToast('绘图便签已贴上 ✨');
-  } catch (e) {
-    showToast('保存失败，请重试');
-  }
-}
-
-// ========== Image Upload ==========
-function openImageModal() {
-  closeMenu();
-  document.getElementById('imageModal').style.display = 'flex';
-  resetImageUpload();
-  document.getElementById('imgAuthor').focus();
-}
-function closeImageModal() {
-  document.getElementById('imageModal').style.display = 'none';
-  resetImageUpload();
-}
-function resetImageUpload() {
-  selectedImageUrl = '';
-  selectedImageFile = null;
-  document.getElementById('imgFile').value = '';
-  document.getElementById('uploadPreview').style.display = 'none';
-  document.getElementById('imgSubmitBtn').disabled = true;
-  document.getElementById('imgCaption').value = '';
-}
-
-function setupUploadDrag() {
-  const zone = document.getElementById('uploadZone');
-  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
-  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
-  zone.addEventListener('drop', (e) => {
-    e.preventDefault();
-    zone.classList.remove('drag-over');
-    if (e.dataTransfer.files.length > 0) {
-      handleImageFile(e.dataTransfer.files[0]);
-    }
-  });
-}
-
-function handleImageSelect(e) {
-  if (e.target.files.length > 0) {
-    handleImageFile(e.target.files[0]);
-  }
-}
-
-function handleImageFile(file) {
-  if (!file.type.startsWith('image/')) { showToast('请选择图片文件'); return; }
-  selectedImageFile = file;
-  const reader = new FileReader();
-  reader.onload = (ev) => {
-    const preview = document.getElementById('uploadPreview');
-    preview.src = ev.target.result;
-    preview.style.display = 'block';
-    document.getElementById('imgSubmitBtn').disabled = false;
-  };
-  reader.readAsDataURL(file);
-}
-
-async function submitImageSticker() {
-  if (!selectedImageFile) { showToast('请先选择图片'); return; }
-  const author = document.getElementById('imgAuthor').value.trim() || '匿名';
-  const caption = document.getElementById('imgCaption').value.trim();
-  const formData = new FormData();
-  formData.append('file', selectedImageFile);
-  let imageUrl = '';
-  try {
-    const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
-    if (!uploadRes.ok) throw new Error('上传失败');
-    const uploadData = await uploadRes.json();
-    imageUrl = uploadData.url;
-  } catch (e) {
-    showToast('图片上传失败');
-    return;
-  }
-  const pos = getPendingPos();
-  const data = {
-    content_type: 'image',
-    author,
-    text_content: caption,
-    image_path: imageUrl,
-    bg_color: '#FFFFFF',
-    pos_x: pos.x,
-    pos_y: pos.y,
-    rotation: pos.rot,
-    width: 290,
-    height: 300
-  };
-  try {
-    const s = await saveSticker(data);
-    stickers.unshift(s);
-    closeImageModal();
-    renderStickers();
-    showToast('图片便签已贴上 ✨');
-  } catch (e) {
-    showToast('保存失败，请重试');
-  }
-}
-
-// ========== Drag & Drop on Wall ==========
+// ========== Drag on Wall ==========
 function setupDragAndDrop() {
-  document.addEventListener('mousemove', onMouseMove);
-  document.addEventListener('mouseup', onMouseUp);
-  document.addEventListener('touchmove', onTouchMove, { passive: false });
-  document.addEventListener('touchend', onTouchEnd);
+  document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onMouseUp);
+  document.addEventListener('touchmove', onTouchMove, { passive: false }); document.addEventListener('touchend', onTouchEnd);
 }
-
-function onStickerMouseDown(e) {
-  if (e.button !== 0) return;
-  e.preventDefault();
-  hasMoved = false;
-  startDrag(e.currentTarget, e.clientX, e.clientY);
+function onStickerMouseDown(e) { if (e.button !== 0) return; e.preventDefault(); hasMoved = false; startDrag(e.currentTarget, e.clientX, e.clientY); }
+function onStickerTouchStart(e) { hasMoved = false; const t = e.touches[0]; startDrag(e.currentTarget, t.clientX, t.clientY); }
+function startDrag(el, cx, cy) {
+  dragTarget = el; const r = el.getBoundingClientRect();
+  dragOffsetX = cx - r.left; dragOffsetY = cy - r.top;
+  dragStartX_wall = cx; dragStartY_wall = cy;
+  dragZIndex = parseInt(el.style.zIndex) || 1; el.style.zIndex = 999;
 }
-
-function onStickerTouchStart(e) {
-  hasMoved = false;
-  const touch = e.touches[0];
-  startDrag(e.currentTarget, touch.clientX, touch.clientY);
-}
-
-function startDrag(el, clientX, clientY) {
-  dragTarget = el;
-  const rect = el.getBoundingClientRect();
-  dragOffsetX = clientX - rect.left;
-  dragOffsetY = clientY - rect.top;
-  dragStartX_wall = clientX;
-  dragStartY_wall = clientY;
-  dragZIndex = parseInt(el.style.zIndex) || 1;
-  el.style.zIndex = 999;
-}
-
-function onMouseMove(e) {
-  if (!dragTarget) return;
-  const dx = e.clientX - dragStartX_wall;
-  const dy = e.clientY - dragStartY_wall;
-  if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
-    if (!hasMoved) {
-      hasMoved = true;
-      dragTarget.classList.add('dragging');
-    }
-  }
-  if (hasMoved) {
-    moveDrag(e.clientX, e.clientY);
-  }
-}
-
-function onTouchMove(e) {
-  if (!dragTarget) return;
-  e.preventDefault();
-  const touch = e.touches[0];
-  const dx = touch.clientX - dragStartX_wall;
-  const dy = touch.clientY - dragStartY_wall;
-  if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
-    if (!hasMoved) {
-      hasMoved = true;
-      dragTarget.classList.add('dragging');
-    }
-  }
-  if (hasMoved) {
-    moveDrag(touch.clientX, touch.clientY);
-  }
-}
-
-function moveDrag(clientX, clientY) {
-  const wall = document.getElementById('wall');
-  const wallRect = wall.getBoundingClientRect();
-  const newLeft = clientX - wallRect.left - dragOffsetX;
-  const newTop = clientY - wallRect.top - dragOffsetY;
-  dragTarget.style.left = newLeft + 'px';
-  dragTarget.style.top = newTop + 'px';
-}
-
-function onMouseUp() {
-  endDrag();
-}
-function onTouchEnd() {
-  endDrag();
-}
-
+function onMouseMove(e) { if (!dragTarget) return; if (Math.abs(e.clientX - dragStartX_wall) > DRAG_THRESHOLD || Math.abs(e.clientY - dragStartY_wall) > DRAG_THRESHOLD) { if (!hasMoved) { hasMoved = true; dragTarget.classList.add('dragging'); } } if (hasMoved) moveDrag(e.clientX, e.clientY); }
+function onTouchMove(e) { if (!dragTarget) return; e.preventDefault(); const t = e.touches[0]; if (Math.abs(t.clientX - dragStartX_wall) > DRAG_THRESHOLD || Math.abs(t.clientY - dragStartY_wall) > DRAG_THRESHOLD) { if (!hasMoved) { hasMoved = true; dragTarget.classList.add('dragging'); } } if (hasMoved) moveDrag(t.clientX, t.clientY); }
+function moveDrag(cx, cy) { const r = document.getElementById('wall').getBoundingClientRect(); dragTarget.style.left = (cx - r.left - dragOffsetX) + 'px'; dragTarget.style.top = (cy - r.top - dragOffsetY) + 'px'; }
+function onMouseUp() { endDrag(); }
+function onTouchEnd() { endDrag(); }
 async function endDrag() {
-  if (!dragTarget) return;
-  const id = dragTarget.dataset.id;
-  const wasMoved = hasMoved;
-  dragTarget.classList.remove('dragging');
-  dragTarget.style.zIndex = dragZIndex;
-
+  if (!dragTarget) return; const id = dragTarget.dataset.id, wasMoved = hasMoved;
+  dragTarget.classList.remove('dragging'); dragTarget.style.zIndex = dragZIndex;
   if (wasMoved) {
-    // 发生了拖拽，保存新位置
-    const left = parseFloat(dragTarget.style.left) || 0;
-    const top = parseFloat(dragTarget.style.top) || 0;
-    dragTarget = null;
-    hasMoved = false;
-    try {
-      await updateStickerPos(id, left, top);
-      const s = stickers.find(s => s.id === id);
-      if (s) { s.pos_x = left; s.pos_y = top; }
-    } catch (e) {
-      console.error('更新位置失败:', e);
-    }
-  } else {
-    // 没有移动 = 点击，打开详情
-    dragTarget = null;
-    hasMoved = false;
-    openDetail(id);
-  }
-}
-
-// ========== Helpers ==========
-function getSelectedColor(groupId) {
-  const active = document.querySelector(`#${groupId} .color-dot.active`);
-  return active ? active.dataset.color : '#FFF9E6';
-}
-function selectColor(dot, groupId) {
-  document.querySelectorAll(`#${groupId} .color-dot`).forEach(d => d.classList.remove('active'));
-  dot.classList.add('active');
+    const l = parseFloat(dragTarget.style.left) || 0, t = parseFloat(dragTarget.style.top) || 0;
+    dragTarget = null; hasMoved = false;
+    try { await updateStickerPos(id, l, t); const s = stickers.find(s => s.id === id); if (s) { s.pos_x = l; s.pos_y = t; } } catch {}
+  } else { dragTarget = null; hasMoved = false; openDetail(id); }
 }
 
 function showToast(msg) {
-  const existing = document.querySelector('.toast');
-  if (existing) existing.remove();
-  const t = document.createElement('div');
-  t.className = 'toast';
-  t.textContent = msg;
-  document.body.appendChild(t);
+  const ex = document.querySelector('.toast'); if (ex) ex.remove();
+  const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
   setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; }, 2000);
   setTimeout(() => t.remove(), 2400);
 }
