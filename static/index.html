@@ -168,6 +168,12 @@ html, body {
   white-space: pre-wrap; word-break: break-word;
   display: flex; flex-direction: column;
 }
+.sticker-content .text-body {
+  display: -webkit-box;
+  -webkit-line-clamp: 8;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
 .sticker-content img {
   max-width: 100%; border-radius: var(--radius-sm);
   margin-top: 4px; object-fit: contain;
@@ -775,14 +781,98 @@ function updateStickerContent(el, s) {
   const contentDiv = el.querySelector('.sticker-content');
   contentDiv.innerHTML = '';
 
+  // --- 动态尺寸常量 ---
+  const PAD_H = 36;       // 水平 padding (18*2)
+  const PAD_V = 90;       // 垂直 padding + 顶部 meta 信息区域
+  const MIN_W = 180, MAX_W = 270;
+  const MIN_H = 140, MAX_H = 220;
+  const LINE_H = 21.7;    // 14px * 1.55 line-height
+  const AVG_CHAR_W = 14;  // 中文字符约为14px宽
+
   if (s.content_type === 'text') {
-    contentDiv.textContent = s.text_content || '';
+    const text = s.text_content || '';
+    // 将文字包在 .text-body 中，让 CSS line-clamp 截断+省略号
+    const span = document.createElement('span');
+    span.className = 'text-body';
+    span.textContent = text;
+    contentDiv.appendChild(span);
+
+    // 按内容估算行宽与行数，动态调整便签尺寸
+    const lines = text.split('\n');
+    let maxLineChars = 0;
+    lines.forEach(line => { if (line.length > maxLineChars) maxLineChars = line.length; });
+    const contentW = Math.min(MAX_W, Math.max(MIN_W, maxLineChars * AVG_CHAR_W + 20));
+    const totalLines = lines.reduce((c, line) => c + Math.max(1, Math.ceil(line.length * AVG_CHAR_W / contentW)), 0);
+    const contentH = Math.min(MAX_H, Math.max(MIN_H, totalLines * LINE_H + 20));
+
+    el.style.width = contentW + 'px';
+    el.style.height = contentH + 'px';
+    s.width = contentW;
+    s.height = contentH;
+
+  } else if (s.content_type === 'handwriting' || s.content_type === 'drawing') {
+    const isHW = s.content_type === 'handwriting';
+    const strokes = isHW ? s.handwriting_data : s.drawing_data;
+    const MAX_W_CV = isHW ? 300 : 320;
+    const MAX_H_CV = isHW ? 280 : 300;
+
+    // 根据笔画数据计算包围盒
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    if (strokes && Array.isArray(strokes)) {
+      strokes.forEach(st => {
+        if (st.points) st.points.forEach(([px, py]) => {
+          if (px < minX) minX = px; if (py < minY) minY = py;
+          if (px > maxX) maxX = px; if (py > maxY) maxY = py;
+        });
+      });
+    }
+    const hasContent = isFinite(minX);
+    const bbW = hasContent ? maxX - minX + 24 : 140;
+    const bbH = hasContent ? maxY - minY + 24 : 120;
+
+    const cvsW = Math.min(MAX_W_CV - PAD_H, Math.max(MIN_W - PAD_H, Math.round(bbW)));
+    const cvsH = Math.min(MAX_H_CV - PAD_V, Math.max(MIN_H - PAD_V, Math.round(bbH)));
+
+    if (hasContent) {
+      const cvs = document.createElement('canvas');
+      cvs.width = cvsW;
+      cvs.height = cvsH;
+      cvs.style.width = '100%';
+      cvs.style.height = 'auto';
+      const ctx = cvs.getContext('2d');
+      // 缩放到包围盒内
+      const scale = Math.min(cvsW / bbW, cvsH / bbH) * 0.9;
+      const offsetX = (cvsW - bbW * scale) / 2 - minX * scale;
+      const offsetY = (cvsH - bbH * scale) / 2 - minY * scale;
+      ctx.setTransform(scale, 0, 0, scale, offsetX, offsetY);
+      renderStrokes(ctx, strokes);
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      contentDiv.appendChild(cvs);
+    }
+
+    const finalW = cvsW + PAD_H;
+    const finalH = cvsH + PAD_V;
+    el.style.width = finalW + 'px';
+    el.style.height = finalH + 'px';
+    s.width = finalW;
+    s.height = finalH;
+
   } else if (s.content_type === 'image') {
+    const MAX_W_IMG = 290, MAX_H_IMG = 300;
+
     if (s.image_path) {
       const img = document.createElement('img');
       img.src = s.image_path;
       img.alt = '图片';
       img.loading = 'lazy';
+      img.style.maxWidth = '100%';
+      img.style.borderRadius = 'var(--radius-sm)';
+      img.style.objectFit = 'contain';
+      // 让图片适应便签内容区
+      const availW = MAX_W_IMG - PAD_H;
+      const availH = MAX_H_IMG - PAD_V;
+      img.style.maxWidth = availW + 'px';
+      img.style.maxHeight = (s.text_content ? availH * 0.7 : availH) + 'px';
       contentDiv.appendChild(img);
     }
     if (s.text_content) {
@@ -791,30 +881,18 @@ function updateStickerContent(el, s) {
       p.style.marginTop = '6px';
       p.style.fontSize = '12px';
       p.style.color = 'var(--text-secondary)';
+      p.style.overflow = 'hidden';
+      p.style.textOverflow = 'ellipsis';
+      p.style.display = '-webkit-box';
+      p.style.WebkitLineClamp = '2';
+      p.style.WebkitBoxOrient = 'vertical';
       contentDiv.appendChild(p);
     }
-  } else if (s.content_type === 'handwriting') {
-    if (s.handwriting_data) {
-      const cvs = document.createElement('canvas');
-      cvs.width = s.width - 36;
-      cvs.height = s.height - 90;
-      cvs.style.width = '100%';
-      cvs.style.height = 'auto';
-      const ctx = cvs.getContext('2d');
-      renderStrokes(ctx, s.handwriting_data);
-      contentDiv.appendChild(cvs);
-    }
-  } else if (s.content_type === 'drawing') {
-    if (s.drawing_data) {
-      const cvs = document.createElement('canvas');
-      cvs.width = s.width - 36;
-      cvs.height = s.height - 90;
-      cvs.style.width = '100%';
-      cvs.style.height = 'auto';
-      const ctx = cvs.getContext('2d');
-      renderStrokes(ctx, s.drawing_data);
-      contentDiv.appendChild(cvs);
-    }
+    // 图片便签暂时保持固定最大值，后续可优化
+    el.style.width = MAX_W_IMG + 'px';
+    el.style.height = MAX_H_IMG + 'px';
+    s.width = MAX_W_IMG;
+    s.height = MAX_H_IMG;
   }
 }
 
