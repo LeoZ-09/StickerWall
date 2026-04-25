@@ -1,0 +1,16 @@
+{
+  "name": "stickerwall",
+  "version": "1.0.0",
+  "description": "便签墙 - 摄影社团课堂 Ideas 记录工具",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.21.0",
+    "multer": "^1.4.5-lts.1",
+    "sharp": "^0.33.0",
+    "uuid": "^10.0.0"
+  }
+}

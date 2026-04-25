@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>便签墙 · StickerWall</title>
+<style>
+/* ========== CSS Variables & Reset ========== */
+:root {
+  --bg: #f2f2f7;
+  --wall-bg: #e8e8ed;
+  --glass-bg: rgba(255,255,255,0.72);
+  --glass-border: rgba(255,255,255,0.5);
+  --glass-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  --text-primary: #1c1c1e;
+  --text-secondary: #636366;
+  --text-tertiary: #aeaeb2;
+  --accent: #007AFF;
+  --accent-dim: rgba(0,122,255,0.12);
+  --red: #FF3B30;
+  --orange: #FF9500;
+  --yellow: #FFCC00;
+  --green: #34C759;
+  --teal: #5AC8FA;
+  --purple: #AF52DE;
+  --pink: #FF2D55;
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-xl: 36px;
+  --font: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "PingFang SC", "Helvetica Neue", sans-serif;
+  --transition-fast: 0.18s cubic-bezier(0.25, 0.1, 0.25, 1);
+  --transition-smooth: 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
+  --transition-spring: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+  --safe-bottom: env(safe-area-inset-bottom, 16px);
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%; width: 100%;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text-primary);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ========== Wall Area ========== */
+.wall {
+  position: relative;
+  width: 100%; height: 100%;
+  background:
+    radial-gradient(ellipse at 20% 20%, #e0e0e8 0%, transparent 50%),
+    radial-gradient(ellipse at 80% 60%, #d8d8e0 0%, transparent 50%),
+    var(--wall-bg);
+  overflow: hidden;
+}
+
+/* Grid dots decoration */
+.wall::before {
+  content: '';
+  position: absolute; inset: 0;
+  background-image: radial-gradient(circle, rgba(0,0,0,0.06) 1px, transparent 1px);
+  background-size: 32px 32px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Wall click hint (shown briefly on empty click area) */
+.wall-hint {
+  position: absolute; pointer-events: none;
+  width: 70px; height: 70px; border-radius: 50%;
+  background: rgba(0,122,255,0.18);
+  transform: translate(-50%, -50%);
+  animation: hintPulse 0.6s ease-out forwards;
+  z-index: 50;
+}
+@keyframes hintPulse {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.6); opacity: 0; }
+}
+
+/* ========== Buttons ========== */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; padding: 10px 18px;
+  border: none; border-radius: var(--radius-md);
+  font-family: var(--font); font-size: 15px; font-weight: 590;
+  cursor: pointer; transition: all var(--transition-fast);
+  white-space: nowrap;
+}
+.btn-primary {
+  background: var(--accent); color: #fff;
+  box-shadow: 0 4px 14px rgba(0,122,255,0.3);
+}
+.btn-primary:hover { background: #0070e9; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(0,122,255,0.4); }
+.btn-primary:active { transform: scale(0.96); }
+.btn-ghost {
+  background: #f5f5f7; color: var(--accent);
+  border: 0.5px solid rgba(0,0,0,0.08);
+}
+.btn-ghost:hover { background: rgba(0,122,255,0.08); }
+.btn-danger {
+  background: rgba(255,59,48,0.1); color: var(--red);
+}
+.btn-danger:hover { background: var(--red); color: #fff; }
+.btn-sm {
+  padding: 6px 14px; font-size: 13px; border-radius: var(--radius-sm);
+}
+
+/* ========== Sticker Card (on wall) ========== */
+.sticker {
+  position: absolute;
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0,0,0,0.1), 0 1px 3px rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: box-shadow var(--transition-smooth), transform var(--transition-fast);
+  overflow: hidden;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 1;
+}
+.sticker:hover { box-shadow: 0 12px 36px rgba(0,0,0,0.14), 0 2px 6px rgba(0,0,0,0.08); transform: scale(1.02); }
+.sticker.dragging {
+  opacity: 0.92; z-index: 999 !important;
+  box-shadow: 0 20px 48px rgba(0,0,0,0.18), 0 4px 12px rgba(0,0,0,0.1);
+  transform: scale(1.04) !important; transition: none;
+  cursor: grabbing;
+}
+.sticker-entering {
+  animation: stickerPop var(--transition-spring) both;
+}
+
+@keyframes stickerPop {
+  0% { transform: scale(0.3) rotate(0deg); opacity: 0; }
+  60% { transform: scale(1.08) rotate(var(--rot, 0deg)); opacity: 1; }
+  100% { transform: scale(1) rotate(var(--rot, 0deg)); opacity: 1; }
+}
+
+@keyframes stickerFadeOut {
+  to { transform: scale(0.4); opacity: 0; }
+}
+
+/* Sticker inner */
+.sticker-inner {
+  width: 100%; height: 100%;
+  display: flex; flex-direction: column;
+  padding: 16px 18px;
+  position: relative;
+  pointer-events: none;  /* let clicks pass through to sticker for drag */
+}
+.sticker-author {
+  font-size: 11px; font-weight: 600; color: var(--text-tertiary);
+  letter-spacing: 0.5px; text-transform: uppercase;
+  margin-bottom: 4px;
+}
+.sticker-date {
+  font-size: 10px; color: var(--text-tertiary);
+  margin-bottom: 10px;
+}
+.sticker-content {
+  flex: 1; overflow: hidden;
+  font-size: 14px; line-height: 1.55; color: var(--text-primary);
+  white-space: pre-wrap; word-break: break-word;
+  display: flex; flex-direction: column;
+}
+.sticker-content img {
+  max-width: 100%; border-radius: var(--radius-sm);
+  margin-top: 4px; object-fit: contain;
+  max-height: 160px;
+}
+.sticker-content canvas {
+  width: 100%; height: auto; border-radius: var(--radius-sm);
+  max-height: 170px; object-fit: contain;
+}
+
+/* Tape decoration */
+.sticker-tape {
+  position: absolute; top: -8px; left: 50%;
+  transform: translateX(-50%) rotate(-2deg);
+  width: 50px; height: 16px;
+  background: rgba(200,190,170,0.55);
+  border-radius: 2px;
+  z-index: 2; pointer-events: none;
+}
+
+/* ========== Floating Add Button ========== */
+.fab {
+  position: fixed; bottom: calc(28px + var(--safe-bottom)); right: 28px; z-index: 110;
+  width: 58px; height: 58px; border-radius: 50%;
+  background: var(--accent); color: #fff;
+  border: none; font-size: 30px; cursor: pointer;
+  box-shadow: 0 8px 28px rgba(0,122,255,0.4);
+  display: flex; align-items: center; justify-content: center;
+  transition: all var(--transition-spring);
+}
+.fab:hover { transform: scale(1.1); box-shadow: 0 12px 36px rgba(0,122,255,0.5); }
+.fab:active { transform: scale(0.92); }
+
+/* ========== Menu (popover) ========== */
+.menu-overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.25);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex; align-items: flex-end; justify-content: center;
+  padding-bottom: 40px;
+  animation: fadeIn 0.2s ease;
+}
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+.menu-sheet {
+  background: rgba(255,255,255,0.92);
+  backdrop-filter: blur(30px) saturate(180%);
+  -webkit-backdrop-filter: blur(30px) saturate(180%);
+  border-radius: var(--radius-xl);
+  padding: 8px;
+  display: flex; flex-direction: column;
+  gap: 2px;
+  width: 320px; max-width: calc(100vw - 40px);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+  animation: slideUp 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.menu-item {
+  display: flex; align-items: center; gap: 14px;
+  padding: 14px 18px; border: none; border-radius: var(--radius-md);
+  background: transparent; font-family: var(--font);
+  font-size: 16px; font-weight: 500; color: var(--text-primary);
+  cursor: pointer; transition: background var(--transition-fast);
+}
+.menu-item:hover { background: rgba(0,0,0,0.04); }
+.menu-item .icon {
+  width: 38px; height: 38px; border-radius: var(--radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 20px; color: #fff;
+}
+.menu-item .icon.blue { background: var(--accent); }
+.menu-item .icon.orange { background: var(--orange); }
+.menu-item .icon.green { background: var(--green); }
+.menu-item .icon.purple { background: var(--purple); }
+.menu-cancel {
+  padding: 14px 18px; border: none; border-radius: var(--radius-md);
+  background: rgba(0,0,0,0.04); font-family: var(--font);
+  font-size: 16px; font-weight: 600; color: var(--text-secondary);
+  cursor: pointer; margin-top: 4px; transition: background var(--transition-fast);
+}
+.menu-cancel:hover { background: rgba(0,0,0,0.08); }
+
+/* ========== Detail Overlay ========== */
+.detail-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  background: rgba(0,0,0,0.45);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 32px;
+  animation: fadeIn 0.25s ease;
+}
+.detail-card {
+  background: #fff;
+  border-radius: var(--radius-xl);
+  max-width: 560px; width: 100%; max-height: 80vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.3);
+  animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+.detail-header {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  padding: 22px 24px 14px;
+  border-bottom: 0.5px solid rgba(0,0,0,0.08);
+}
+.detail-header h3 { font-size: 20px; font-weight: 680; }
+.detail-header-meta .author { font-size: 13px; font-weight: 600; color: var(--text-secondary); }
+.detail-header-meta .date { font-size: 12px; color: var(--text-tertiary); margin-top: 2px; }
+.detail-close {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: rgba(0,0,0,0.06); border: none;
+  font-size: 16px; cursor: pointer; color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--transition-fast); flex-shrink: 0;
+}
+.detail-close:hover { background: rgba(0,0,0,0.12); }
+.detail-body {
+  flex: 1; overflow-y: auto; padding: 20px 24px;
+}
+.detail-body img { max-width: 100%; border-radius: var(--radius-md); }
+.detail-body canvas { max-width: 100%; border-radius: var(--radius-md); }
+.detail-body .text-content { font-size: 15px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+.detail-footer {
+  padding: 14px 24px 20px;
+  display: flex; gap: 10px; justify-content: flex-end;
+  border-top: 0.5px solid rgba(0,0,0,0.06);
+}
+
+/* ========== Modal ========== */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center;
+  padding: 24px;
+  animation: fadeIn 0.2s ease;
+}
+.modal {
+  background: #fff;
+  border-radius: var(--radius-xl);
+  width: 460px; max-width: 100%;
+  max-height: 85vh;
+  display: flex; flex-direction: column;
+  box-shadow: 0 30px 70px rgba(0,0,0,0.25);
+  animation: modalPop 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+  overflow: hidden;
+}
+@keyframes modalPop {
+  from { transform: scale(0.85) translateY(30px); opacity: 0; }
+  to { transform: scale(1) translateY(0); opacity: 1; }
+}
+.modal-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 22px 14px;
+  border-bottom: 0.5px solid rgba(0,0,0,0.08);
+}
+.modal-header h3 { font-size: 18px; font-weight: 680; }
+.modal-close {
+  width: 30px; height: 30px; border-radius: 50%;
+  background: rgba(0,0,0,0.06); border: none;
+  font-size: 16px; cursor: pointer; color: var(--text-secondary);
+  display: flex; align-items: center; justify-content: center;
+  transition: background var(--transition-fast);
+}
+.modal-close:hover { background: rgba(0,0,0,0.12); }
+.modal-body {
+  flex: 1; overflow-y: auto; padding: 20px 22px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+.modal-footer {
+  padding: 14px 22px 20px;
+  display: flex; gap: 10px; justify-content: flex-end;
+  border-top: 0.5px solid rgba(0,0,0,0.06);
+}
+
+/* ========== Form Elements ========== */
+.form-group { display: flex; flex-direction: column; gap: 6px; }
+.form-group label { font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.6px; }
+.form-input, .form-textarea {
+  padding: 12px 16px; border-radius: var(--radius-sm);
+  border: 1px solid rgba(0,0,0,0.12); background: #fafafa;
+  font-family: var(--font); font-size: 15px;
+  color: var(--text-primary); outline: none;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.form-input:focus, .form-textarea:focus {
+  border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-dim);
+}
+.form-textarea { resize: vertical; min-height: 100px; }
+
+/* Color picker */
+.color-options {
+  display: flex; gap: 8px; flex-wrap: wrap;
+}
+.color-dot {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 2.5px solid transparent; cursor: pointer;
+  transition: transform var(--transition-fast), border-color var(--transition-fast);
+}
+.color-dot:hover { transform: scale(1.15); }
+.color-dot.active { border-color: var(--accent); transform: scale(1.12); }
+
+/* Canvas area */
+.canvas-container {
+  position: relative; border-radius: var(--radius-md);
+  border: 1px solid rgba(0,0,0,0.1); overflow: hidden;
+  background: #fff;
+}
+.canvas-container canvas { display: block; width: 100%; cursor: crosshair; }
+.canvas-toolbar {
+  display: flex; gap: 6px; align-items: center; flex-wrap: wrap;
+  padding: 8px 0;
+}
+.tool-btn {
+  padding: 6px 12px; border-radius: var(--radius-sm);
+  border: 0.5px solid rgba(0,0,0,0.12); background: #fafafa;
+  font-family: var(--font); font-size: 13px; font-weight: 500;
+  cursor: pointer; color: var(--text-primary);
+  transition: all var(--transition-fast);
+}
+.tool-btn:hover { background: rgba(0,0,0,0.05); }
+.tool-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.pen-size { width: 52px; padding: 6px; text-align: center; }
+
+/* Upload area */
+.upload-zone {
+  border: 2px dashed rgba(0,0,0,0.15); border-radius: var(--radius-md);
+  padding: 40px 20px; text-align: center; cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.upload-zone:hover { border-color: var(--accent); background: var(--accent-dim); }
+.upload-zone.drag-over { border-color: var(--accent); background: var(--accent-dim); transform: scale(1.01); }
+.upload-zone .upload-icon { font-size: 40px; margin-bottom: 10px; }
+.upload-zone p { font-size: 14px; color: var(--text-secondary); }
+.upload-preview { max-width: 100%; border-radius: var(--radius-md); margin-top: 12px; display: none; }
+
+/* ========== Toast ========== */
+.toast {
+  position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%); z-index: 9999;
+  background: rgba(30,30,30,0.9); color: #fff;
+  padding: 12px 24px; border-radius: var(--radius-md);
+  font-size: 14px; font-weight: 500;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  animation: toastIn 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  pointer-events: none;
+}
+@keyframes toastIn {
+  from { opacity: 0; transform: translateX(-50%) translateY(20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
+
+/* 颜色预设 */
+.bg-1 { background: #FFF9E6; }
+.bg-2 { background: #F0F7FF; }
+.bg-3 { background: #FFF0F5; }
+.bg-4 { background: #F5FFF5; }
+.bg-5 { background: #FFF5F0; }
+.bg-6 { background: #F8F0FF; }
+.bg-7 { background: #FFFFFF; }
+</style>
+</head>
+<body>
+
+<!-- ==================== WALL ==================== -->
+<div class="wall" id="wall">
+  <div id="stickers-container"></div>
+  <button class="fab" id="fab" onclick="openMenu()" title="新建便签">+</button>
+</div>
+
+<!-- ==================== MENU OVERLAY ==================== -->
+<div class="menu-overlay" id="menuOverlay" style="display:none" onclick="closeMenu(event)">
+  <div class="menu-sheet" onclick="event.stopPropagation()">
+    <button class="menu-item" onclick="openTextModal()">
+      <span class="icon blue">📝</span> 文字便签
+    </button>
+    <button class="menu-item" onclick="openHandwriteModal()">
+      <span class="icon orange">✍️</span> 手写便签
+    </button>
+    <button class="menu-item" onclick="openImageModal()">
+      <span class="icon green">🖼️</span> 上传图片
+    </button>
+    <button class="menu-item" onclick="openDrawingModal()">
+      <span class="icon purple">🎨</span> 在线绘图
+    </button>
+    <button class="menu-cancel" onclick="closeMenu()">取消</button>
+  </div>
+</div>
+
+<!-- ==================== DETAIL OVERLAY ==================== -->
+<div class="detail-overlay" id="detailOverlay" style="display:none" onclick="if(event.target===this)closeDetail()">
+  <div class="detail-card">
+    <div class="detail-header">
+      <div class="detail-header-meta">
+        <div class="author" id="detailAuthor"></div>
+        <div class="date" id="detailDate"></div>
+      </div>
+      <button class="detail-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+    <div class="detail-footer">
+      <button class="btn btn-danger btn-sm" onclick="deleteFromDetail()">🗑 删除</button>
+      <button class="btn btn-primary btn-sm" onclick="closeDetail()">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== MODALS ==================== -->
+
+<!-- Text Modal -->
+<div class="modal-overlay" id="textModal" style="display:none" onclick="if(event.target===this)closeTextModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>📝 新建文字便签</h3>
+      <button class="modal-close" onclick="closeTextModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>你的名字</label>
+        <input type="text" class="form-input" id="textAuthor" placeholder="输入你的名字" maxlength="30">
+      </div>
+      <div class="form-group">
+        <label>内容</label>
+        <textarea class="form-textarea" id="textContent" placeholder="写下你的想法…" rows="4"></textarea>
+      </div>
+      <div class="form-group">
+        <label>便签颜色</label>
+        <div class="color-options" id="textColorOptions">
+          <span class="color-dot active bg-1" data-color="#FFF9E6" onclick="selectColor(this,'textColorOptions')"></span>
+          <span class="color-dot bg-2" data-color="#F0F7FF" onclick="selectColor(this,'textColorOptions')"></span>
+          <span class="color-dot bg-3" data-color="#FFF0F5" onclick="selectColor(this,'textColorOptions')"></span>
+          <span class="color-dot bg-4" data-color="#F5FFF5" onclick="selectColor(this,'textColorOptions')"></span>
+          <span class="color-dot bg-5" data-color="#FFF5F0" onclick="selectColor(this,'textColorOptions')"></span>
+          <span class="color-dot bg-6" data-color="#F8F0FF" onclick="selectColor(this,'textColorOptions')"></span>
+          <span class="color-dot bg-7" data-color="#FFFFFF" onclick="selectColor(this,'textColorOptions')"></span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeTextModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitTextSticker()">贴上去</button>
+    </div>
+  </div>
+</div>
+
+<!-- Handwrite Modal -->
+<div class="modal-overlay" id="handwriteModal" style="display:none" onclick="if(event.target===this)closeHandwriteModal()">
+  <div class="modal" style="width:520px">
+    <div class="modal-header">
+      <h3>✍️ 手写便签</h3>
+      <button class="modal-close" onclick="closeHandwriteModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>你的名字</label>
+        <input type="text" class="form-input" id="hwAuthor" placeholder="输入你的名字" maxlength="30">
+      </div>
+      <div class="form-group">
+        <label>手写区域</label>
+        <div class="canvas-toolbar">
+          <button class="tool-btn active" data-tool="pen" onclick="setHWTool('pen',this)">🖊 画笔</button>
+          <button class="tool-btn" data-tool="eraser" onclick="setHWTool('eraser',this)">🧹 橡皮</button>
+          <input type="color" id="hwColor" value="#1c1c1e" title="颜色" style="width:32px;height:32px;border:none;cursor:pointer;border-radius:6px;">
+          <input type="number" id="hwSize" class="pen-size" value="3" min="1" max="20" title="粗细">
+          <button class="tool-btn" onclick="clearHWCanvas()">🗑 清空</button>
+        </div>
+        <div class="canvas-container">
+          <canvas id="hwCanvas" width="480" height="300"></canvas>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>便签颜色</label>
+        <div class="color-options" id="hwColorOptions">
+          <span class="color-dot active bg-1" data-color="#FFF9E6" onclick="selectColor(this,'hwColorOptions')"></span>
+          <span class="color-dot bg-2" data-color="#F0F7FF" onclick="selectColor(this,'hwColorOptions')"></span>
+          <span class="color-dot bg-3" data-color="#FFF0F5" onclick="selectColor(this,'hwColorOptions')"></span>
+          <span class="color-dot bg-4" data-color="#F5FFF5" onclick="selectColor(this,'hwColorOptions')"></span>
+          <span class="color-dot bg-5" data-color="#FFF5F0" onclick="selectColor(this,'hwColorOptions')"></span>
+          <span class="color-dot bg-6" data-color="#F8F0FF" onclick="selectColor(this,'hwColorOptions')"></span>
+          <span class="color-dot bg-7" data-color="#FFFFFF" onclick="selectColor(this,'hwColorOptions')"></span>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeHandwriteModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitHWSticker()">贴上去</button>
+    </div>
+  </div>
+</div>
+
+<!-- Image Modal -->
+<div class="modal-overlay" id="imageModal" style="display:none" onclick="if(event.target===this)closeImageModal()">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>🖼️ 上传图片</h3>
+      <button class="modal-close" onclick="closeImageModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>你的名字</label>
+        <input type="text" class="form-input" id="imgAuthor" placeholder="输入你的名字" maxlength="30">
+      </div>
+      <div class="upload-zone" id="uploadZone" onclick="document.getElementById('imgFile').click()">
+        <div class="upload-icon">📷</div>
+        <p>点击选择图片或拖拽到此处</p>
+        <p style="font-size:11px;color:var(--text-tertiary);margin-top:4px;">支持 JPG / PNG / GIF / WebP</p>
+      </div>
+      <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="handleImageSelect(event)">
+      <img id="uploadPreview" class="upload-preview" alt="预览">
+      <div class="form-group">
+        <label>图片说明（可选）</label>
+        <textarea class="form-textarea" id="imgCaption" placeholder="给图片配一段文字…" rows="2"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeImageModal()">取消</button>
+      <button class="btn btn-primary" id="imgSubmitBtn" disabled onclick="submitImageSticker()">贴上去</button>
+    </div>
+  </div>
+</div>
+
+<!-- Drawing Modal -->
+<div class="modal-overlay" id="drawingModal" style="display:none" onclick="if(event.target===this)closeDrawingModal()">
+  <div class="modal" style="width:520px">
+    <div class="modal-header">
+      <h3>🎨 在线绘图</h3>
+      <button class="modal-close" onclick="closeDrawingModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>你的名字</label>
+        <input type="text" class="form-input" id="drawAuthor" placeholder="输入你的名字" maxlength="30">
+      </div>
+      <div class="form-group">
+        <label>绘图区域</label>
+        <div class="canvas-toolbar">
+          <button class="tool-btn active" data-tool="pen" onclick="setDrawTool('pen',this)">🖊 画笔</button>
+          <button class="tool-btn" data-tool="eraser" onclick="setDrawTool('eraser',this)">🧹 橡皮</button>
+          <button class="tool-btn" data-tool="rect" onclick="setDrawTool('rect',this)">▭ 矩形</button>
+          <button class="tool-btn" data-tool="circle" onclick="setDrawTool('circle',this)">○ 圆形</button>
+          <input type="color" id="drawColor" value="#007AFF" title="颜色" style="width:32px;height:32px;border:none;cursor:pointer;border-radius:6px;">
+          <input type="number" id="drawSize" class="pen-size" value="3" min="1" max="20" title="粗细">
+          <button class="tool-btn" onclick="clearDrawCanvas()">🗑 清空</button>
+        </div>
+        <div class="canvas-container" style="background:#fff;">
+          <canvas id="drawCanvas" width="480" height="340"></canvas>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeDrawingModal()">取消</button>
+      <button class="btn btn-primary" onclick="submitDrawingSticker()">贴上去</button>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== SCRIPTS ==================== -->
+<script>
+// ========== Globals ==========
+let stickers = [];
+let selectedImageUrl = '';
+let selectedImageFile = null;
+let pendingPosX = null, pendingPosY = null;  // 预设的点击位置
+let currentDetailId = null;                   // 当前查看详情的便签ID
+let autoRefreshTimer = null;
+
+// Handwriting state
+let hwDrawing = false;
+let hwTool = 'pen';
+let hwCtx, hwCanvas;
+
+// Drawing state
+let drawDrawing = false;
+let drawTool = 'pen';
+let drawCtx, drawCanvas;
+let drawStartX, drawStartY, drawSnapshot;
+
+// Drag state
+let dragTarget = null;
+let dragOffsetX = 0, dragOffsetY = 0;
+let dragStartX_wall = 0, dragStartY_wall = 0;
+let dragZIndex = 1;
+let hasMoved = false;          // 是否发生了拖拽移动
+const DRAG_THRESHOLD = 5;      // 像素阈值，超过才算拖拽
+
+// ========== Init ==========
+document.addEventListener('DOMContentLoaded', () => {
+  refreshWall();
+  initHWCanvas();
+  initDrawCanvas();
+  setupDragAndDrop();
+  setupUploadDrag();
+  setupWallClick();
+  // 自动刷新：每 8 秒拉取一次数据
+  autoRefreshTimer = setInterval(refreshWallSilent, 8000);
+});
+
+// ========== Auto Refresh ==========
+async function refreshWallSilent() {
+  try {
+    const res = await fetch('/api/stickers');
+    stickers = await res.json();
+    renderStickers();
+  } catch (e) { /* silent */ }
+}
+
+// ========== Wall Click ==========
+function setupWallClick() {
+  const wall = document.getElementById('wall');
+  wall.addEventListener('click', (e) => {
+    // 如果刚结束拖拽，忽略 click
+    if (dragTarget) return;
+    // 检查是否点击在 sticker 上
+    if (e.target.closest('.sticker')) return;
+    // 点击空白区域 → 弹出菜单
+    const rect = wall.getBoundingClientRect();
+    pendingPosX = e.clientX - rect.left;
+    pendingPosY = e.clientY - rect.top;
+    // 显示点击涟漪
+    showWallHint(e.clientX, e.clientY);
+    openMenu();
+  });
+}
+
+function showWallHint(cx, cy) {
+  const hint = document.createElement('div');
+  hint.className = 'wall-hint';
+  hint.style.left = cx + 'px';
+  hint.style.top = cy + 'px';
+  document.body.appendChild(hint);
+  hint.addEventListener('animationend', () => hint.remove());
+}
+
+// ========== Wall Render ==========
+async function refreshWall() {
+  try {
+    const res = await fetch('/api/stickers');
+    stickers = await res.json();
+    renderStickers();
+  } catch (e) {
+    console.error('加载便签失败:', e);
+  }
+}
+
+function renderStickers() {
+  const container = document.getElementById('stickers-container');
+  const existing = new Map();
+  container.querySelectorAll('.sticker').forEach(el => existing.set(el.dataset.id, el));
+
+  stickers.forEach((s, idx) => {
+    let el = existing.get(s.id);
+    if (!el) {
+      el = createStickerElement(s);
+      el.classList.add('sticker-entering');
+      el.style.setProperty('--rot', s.rotation + 'deg');
+      container.appendChild(el);
+    }
+    updateStickerContent(el, s);
+    el.style.left = s.pos_x + 'px';
+    el.style.top = s.pos_y + 'px';
+    el.style.width = s.width + 'px';
+    el.style.height = s.height + 'px';
+    el.style.transform = `rotate(${s.rotation}deg)`;
+    el.style.zIndex = idx + 1;
+    el.dataset.id = s.id;
+  });
+
+  // Remove stale
+  existing.forEach((el, id) => {
+    if (!stickers.find(s => s.id === id)) {
+      el.style.animation = 'stickerFadeOut 0.3s ease forwards';
+      setTimeout(() => el.remove(), 300);
+    }
+  });
+}
+
+function createStickerElement(s) {
+  const el = document.createElement('div');
+  el.className = 'sticker';
+  el.dataset.id = s.id;
+  el.innerHTML = `
+    <div class="sticker-tape"></div>
+    <div class="sticker-inner">
+      <div class="sticker-author"></div>
+      <div class="sticker-date"></div>
+      <div class="sticker-content"></div>
+    </div>
+  `;
+  // 点击便签 → 打开详情（通过 mousedown + mouseup 判断是否为点击而非拖拽）
+  el.addEventListener('mousedown', onStickerMouseDown);
+  el.addEventListener('touchstart', onStickerTouchStart, { passive: false });
+  return el;
+}
+
+function updateStickerContent(el, s) {
+  el.style.background = s.bg_color || '#FFF9E6';
+  el.querySelector('.sticker-author').textContent = (s.author || '匿名').toUpperCase();
+  el.querySelector('.sticker-date').textContent = s.created_at || '';
+  const contentDiv = el.querySelector('.sticker-content');
+  contentDiv.innerHTML = '';
+
+  if (s.content_type === 'text') {
+    contentDiv.textContent = s.text_content || '';
+  } else if (s.content_type === 'image') {
+    if (s.image_path) {
+      const img = document.createElement('img');
+      img.src = s.image_path;
+      img.alt = '图片';
+      img.loading = 'lazy';
+      contentDiv.appendChild(img);
+    }
+    if (s.text_content) {
+      const p = document.createElement('p');
+      p.textContent = s.text_content;
+      p.style.marginTop = '6px';
+      p.style.fontSize = '12px';
+      p.style.color = 'var(--text-secondary)';
+      contentDiv.appendChild(p);
+    }
+  } else if (s.content_type === 'handwriting') {
+    if (s.handwriting_data) {
+      const cvs = document.createElement('canvas');
+      cvs.width = s.width - 36;
+      cvs.height = s.height - 90;
+      cvs.style.width = '100%';
+      cvs.style.height = 'auto';
+      const ctx = cvs.getContext('2d');
+      renderStrokes(ctx, s.handwriting_data);
+      contentDiv.appendChild(cvs);
+    }
+  } else if (s.content_type === 'drawing') {
+    if (s.drawing_data) {
+      const cvs = document.createElement('canvas');
+      cvs.width = s.width - 36;
+      cvs.height = s.height - 90;
+      cvs.style.width = '100%';
+      cvs.style.height = 'auto';
+      const ctx = cvs.getContext('2d');
+      renderStrokes(ctx, s.drawing_data);
+      contentDiv.appendChild(cvs);
+    }
+  }
+}
+
+function renderStrokes(ctx, strokes) {
+  if (!strokes || !Array.isArray(strokes)) return;
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+  strokes.forEach(stroke => {
+    if (!stroke.points || stroke.points.length === 0) return;
+    ctx.beginPath();
+    ctx.strokeStyle = stroke.color || '#1c1c1e';
+    ctx.lineWidth = stroke.size || 3;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    if (stroke.tool === 'eraser') {
+      ctx.globalCompositeOperation = 'destination-out';
+      ctx.lineWidth = (stroke.size || 3) * 4;
+    } else {
+      ctx.globalCompositeOperation = 'source-over';
+    }
+    if (stroke.shape && stroke.points.length >= 2) {
+      const [sx, sy] = stroke.points[0];
+      const [ex, ey] = stroke.points[stroke.points.length - 1];
+      const w = ex - sx;
+      const h = ey - sy;
+      if (stroke.shape === 'rect') {
+        ctx.strokeRect(sx, sy, w, h);
+      } else if (stroke.shape === 'circle') {
+        const rx = Math.abs(w) / 2;
+        const ry = Math.abs(h) / 2;
+        const cx = sx + w / 2;
+        const cy = sy + h / 2;
+        ctx.beginPath();
+        ctx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+    } else {
+      ctx.moveTo(stroke.points[0][0], stroke.points[0][1]);
+      for (let i = 1; i < stroke.points.length; i++) {
+        ctx.lineTo(stroke.points[i][0], stroke.points[i][1]);
+      }
+      ctx.stroke();
+    }
+    ctx.globalCompositeOperation = 'source-over';
+  });
+}
+
+// ========== Detail View ==========
+function openDetail(stickerId) {
+  const s = stickers.find(st => st.id === stickerId);
+  if (!s) return;
+  currentDetailId = stickerId;
+  document.getElementById('detailAuthor').textContent = (s.author || '匿名').toUpperCase();
+  document.getElementById('detailDate').textContent = s.created_at || '';
+  const body = document.getElementById('detailBody');
+  body.innerHTML = '';
+
+  if (s.content_type === 'text') {
+    const div = document.createElement('div');
+    div.className = 'text-content';
+    div.textContent = s.text_content || '';
+    body.appendChild(div);
+  } else if (s.content_type === 'image') {
+    if (s.image_path) {
+      const img = document.createElement('img');
+      img.src = s.image_path;
+      img.alt = '图片';
+      img.style.width = '100%';
+      body.appendChild(img);
+    }
+    if (s.text_content) {
+      const p = document.createElement('p');
+      p.textContent = s.text_content;
+      p.style.marginTop = '12px';
+      p.style.fontSize = '14px';
+      p.style.color = 'var(--text-secondary)';
+      body.appendChild(p);
+    }
+  } else if (s.content_type === 'handwriting' && s.handwriting_data) {
+    const cvs = document.createElement('canvas');
+    cvs.width = 480;
+    cvs.height = 300;
+    cvs.style.width = '100%';
+    cvs.style.height = 'auto';
+    const ctx = cvs.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cvs.width, cvs.height);
+    renderStrokes(ctx, s.handwriting_data);
+    body.appendChild(cvs);
+  } else if (s.content_type === 'drawing' && s.drawing_data) {
+    const cvs = document.createElement('canvas');
+    cvs.width = 480;
+    cvs.height = 340;
+    cvs.style.width = '100%';
+    cvs.style.height = 'auto';
+    const ctx = cvs.getContext('2d');
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, cvs.width, cvs.height);
+    renderStrokes(ctx, s.drawing_data);
+    body.appendChild(cvs);
+  }
+
+  document.getElementById('detailOverlay').style.display = 'flex';
+}
+
+function closeDetail() {
+  document.getElementById('detailOverlay').style.display = 'none';
+  currentDetailId = null;
+}
+
+async function deleteFromDetail() {
+  if (!currentDetailId) return;
+  await deleteSticker(currentDetailId);
+  closeDetail();
+}
+
+// ========== Sticker CRUD ==========
+async function saveSticker(data) {
+  const res = await fetch('/api/stickers', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data)
+  });
+  if (!res.ok) throw new Error('保存失败');
+  return await res.json();
+}
+
+async function removeSticker(id) {
+  await fetch(`/api/stickers/${id}`, { method: 'DELETE' });
+}
+
+async function updateStickerPos(id, pos_x, pos_y) {
+  await fetch(`/api/stickers/${id}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pos_x, pos_y })
+  });
+}
+
+async function deleteSticker(id) {
+  await removeSticker(id);
+  stickers = stickers.filter(s => s.id !== id);
+  renderStickers();
+  showToast('便签已删除');
+}
+
+// ========== Position helpers ==========
+function getPendingPos() {
+  if (pendingPosX !== null && pendingPosY !== null) {
+    const p = { x: pendingPosX - 135, y: pendingPosY - 110, rot: (Math.random() - 0.5) * 4 };
+    pendingPosX = null; pendingPosY = null;
+    return p;
+  }
+  return randomPos();
+}
+
+function randomPos() {
+  const wall = document.getElementById('wall');
+  const w = wall.clientWidth;
+  const h = wall.clientHeight;
+  return {
+    x: 40 + Math.random() * Math.max(0, w - 340),
+    y: 20 + Math.random() * Math.max(0, h - 380),
+    rot: (Math.random() - 0.5) * 6
+  };
+}
+
+// ========== Menu ==========
+function openMenu() {
+  document.getElementById('menuOverlay').style.display = 'flex';
+}
+function closeMenu(e) {
+  if (e && e.target !== document.getElementById('menuOverlay')) return;
+  document.getElementById('menuOverlay').style.display = 'none';
+  // 如果用户取消菜单，清除预设位置
+  pendingPosX = null;
+  pendingPosY = null;
+}
+
+// ========== Text Sticker ==========
+function openTextModal() {
+  closeMenu();
+  document.getElementById('textModal').style.display = 'flex';
+  document.getElementById('textAuthor').focus();
+}
+function closeTextModal() {
+  document.getElementById('textModal').style.display = 'none';
+  document.getElementById('textContent').value = '';
+}
+async function submitTextSticker() {
+  const author = document.getElementById('textAuthor').value.trim() || '匿名';
+  const content = document.getElementById('textContent').value.trim();
+  if (!content) { showToast('请输入内容'); return; }
+  const color = getSelectedColor('textColorOptions');
+  const pos = getPendingPos();
+  const data = {
+    content_type: 'text',
+    author,
+    text_content: content,
+    bg_color: color,
+    pos_x: pos.x,
+    pos_y: pos.y,
+    rotation: pos.rot,
+    width: 270,
+    height: 220
+  };
+  try {
+    const s = await saveSticker(data);
+    stickers.unshift(s);
+    closeTextModal();
+    document.getElementById('textContent').value = '';
+    renderStickers();
+    showToast('便签已贴上 ✨');
+  } catch (e) {
+    showToast('保存失败，请重试');
+  }
+}
+
+// ========== Handwrite Canvas ==========
+function initHWCanvas() {
+  hwCanvas = document.getElementById('hwCanvas');
+  hwCtx = hwCanvas.getContext('2d');
+  hwCtx.fillStyle = '#ffffff';
+  hwCtx.fillRect(0, 0, hwCanvas.width, hwCanvas.height);
+  hwCtx.lineCap = 'round';
+  hwCtx.lineJoin = 'round';
+  hwCanvas._strokes = [];
+  hwCanvas._currentStroke = null;
+
+  hwCanvas.addEventListener('mousedown', startHW);
+  hwCanvas.addEventListener('mousemove', moveHW);
+  hwCanvas.addEventListener('mouseup', endHW);
+  hwCanvas.addEventListener('mouseleave', endHW);
+  hwCanvas.addEventListener('touchstart', startHWTouch, { passive: false });
+  hwCanvas.addEventListener('touchmove', moveHWTouch, { passive: false });
+  hwCanvas.addEventListener('touchend', endHW);
+}
+
+function getHWCanvasPos(e) {
+  const rect = hwCanvas.getBoundingClientRect();
+  const scaleX = hwCanvas.width / rect.width;
+  const scaleY = hwCanvas.height / rect.height;
+  return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+}
+
+function startHW(e) {
+  hwDrawing = true;
+  const p = getHWCanvasPos(e);
+  hwCanvas._currentStroke = {
+    tool: hwTool,
+    color: hwTool === 'eraser' ? '#ffffff' : document.getElementById('hwColor').value,
+    size: parseInt(document.getElementById('hwSize').value) || 3,
+    points: [[p.x, p.y]]
+  };
+  hwCtx.beginPath();
+  hwCtx.moveTo(p.x, p.y);
+}
+function startHWTouch(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  startHW({ clientX: touch.clientX, clientY: touch.clientY });
+}
+function moveHW(e) {
+  if (!hwDrawing) return;
+  const p = getHWCanvasPos(e);
+  const s = hwCanvas._currentStroke;
+  s.points.push([p.x, p.y]);
+  drawHWStrokeSegment(s);
+}
+function moveHWTouch(e) {
+  e.preventDefault();
+  if (!hwDrawing) return;
+  const touch = e.touches[0];
+  moveHW({ clientX: touch.clientX, clientY: touch.clientY });
+}
+function endHW() {
+  if (!hwDrawing) return;
+  hwDrawing = false;
+  if (hwCanvas._currentStroke && hwCanvas._currentStroke.points.length > 0) {
+    hwCanvas._strokes.push(hwCanvas._currentStroke);
+  }
+  hwCanvas._currentStroke = null;
+}
+function drawHWStrokeSegment(s) {
+  hwCtx.save();
+  hwCtx.strokeStyle = s.color;
+  hwCtx.lineWidth = s.size;
+  if (s.tool === 'eraser') {
+    hwCtx.globalCompositeOperation = 'destination-out';
+    hwCtx.lineWidth = s.size * 4;
+  } else {
+    hwCtx.globalCompositeOperation = 'source-over';
+  }
+  hwCtx.beginPath();
+  const pts = s.points;
+  if (pts.length === 1) {
+    hwCtx.arc(pts[0][0], pts[0][1], s.size / 2, 0, Math.PI * 2);
+    hwCtx.fillStyle = s.color;
+    hwCtx.fill();
+  } else {
+    hwCtx.moveTo(pts[pts.length - 2][0], pts[pts.length - 2][1]);
+    hwCtx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+    hwCtx.stroke();
+  }
+  hwCtx.restore();
+}
+function setHWTool(tool, btn) {
+  hwTool = tool;
+  btn.parentElement.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function clearHWCanvas() {
+  hwCtx.clearRect(0, 0, hwCanvas.width, hwCanvas.height);
+  hwCtx.fillStyle = '#ffffff';
+  hwCtx.fillRect(0, 0, hwCanvas.width, hwCanvas.height);
+  hwCanvas._strokes = [];
+}
+
+function openHandwriteModal() {
+  closeMenu();
+  document.getElementById('handwriteModal').style.display = 'flex';
+  clearHWCanvas();
+  document.getElementById('hwAuthor').focus();
+}
+function closeHandwriteModal() {
+  document.getElementById('handwriteModal').style.display = 'none';
+  clearHWCanvas();
+}
+async function submitHWSticker() {
+  if (hwCanvas._strokes.length === 0) { showToast('请先手写内容'); return; }
+  const author = document.getElementById('hwAuthor').value.trim() || '匿名';
+  const color = getSelectedColor('hwColorOptions');
+  const pos = getPendingPos();
+  const data = {
+    content_type: 'handwriting',
+    author,
+    handwriting_data: JSON.parse(JSON.stringify(hwCanvas._strokes)),
+    bg_color: color,
+    pos_x: pos.x,
+    pos_y: pos.y,
+    rotation: pos.rot,
+    width: 300,
+    height: 280
+  };
+  try {
+    const s = await saveSticker(data);
+    stickers.unshift(s);
+    closeHandwriteModal();
+    renderStickers();
+    showToast('手写便签已贴上 ✨');
+  } catch (e) {
+    showToast('保存失败，请重试');
+  }
+}
+
+// ========== Draw Canvas ==========
+function initDrawCanvas() {
+  drawCanvas = document.getElementById('drawCanvas');
+  drawCtx = drawCanvas.getContext('2d');
+  drawCtx.fillStyle = '#ffffff';
+  drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+  drawCtx.lineCap = 'round';
+  drawCtx.lineJoin = 'round';
+  drawCanvas._strokes = [];
+  drawCanvas._currentStroke = null;
+
+  drawCanvas.addEventListener('mousedown', startDraw);
+  drawCanvas.addEventListener('mousemove', moveDraw);
+  drawCanvas.addEventListener('mouseup', endDraw);
+  drawCanvas.addEventListener('mouseleave', endDraw);
+  drawCanvas.addEventListener('touchstart', startDrawTouch, { passive: false });
+  drawCanvas.addEventListener('touchmove', moveDrawTouch, { passive: false });
+  drawCanvas.addEventListener('touchend', endDraw);
+}
+
+function getDrawCanvasPos(e) {
+  const rect = drawCanvas.getBoundingClientRect();
+  const scaleX = drawCanvas.width / rect.width;
+  const scaleY = drawCanvas.height / rect.height;
+  return { x: (e.clientX - rect.left) * scaleX, y: (e.clientY - rect.top) * scaleY };
+}
+
+function startDraw(e) {
+  drawDrawing = true;
+  const p = getDrawCanvasPos(e);
+  drawStartX = p.x;
+  drawStartY = p.y;
+  drawSnapshot = drawCtx.getImageData(0, 0, drawCanvas.width, drawCanvas.height);
+  drawCanvas._currentStroke = {
+    tool: drawTool,
+    color: drawTool === 'eraser' ? '#ffffff' : document.getElementById('drawColor').value,
+    size: parseInt(document.getElementById('drawSize').value) || 3,
+    points: [[p.x, p.y]]
+  };
+  if (drawTool === 'pen' || drawTool === 'eraser') {
+    drawCtx.beginPath();
+    drawCtx.moveTo(p.x, p.y);
+  }
+}
+function startDrawTouch(e) {
+  e.preventDefault();
+  const touch = e.touches[0];
+  startDraw({ clientX: touch.clientX, clientY: touch.clientY });
+}
+function moveDraw(e) {
+  if (!drawDrawing) return;
+  const p = getDrawCanvasPos(e);
+  const s = drawCanvas._currentStroke;
+  s.points.push([p.x, p.y]);
+  if (drawTool === 'pen' || drawTool === 'eraser') {
+    drawDrawStrokeSegment(s);
+  } else {
+    drawCtx.putImageData(drawSnapshot, 0, 0);
+    drawCtx.save();
+    drawCtx.strokeStyle = s.color;
+    drawCtx.lineWidth = s.size;
+    const w = p.x - drawStartX;
+    const h = p.y - drawStartY;
+    if (drawTool === 'rect') {
+      drawCtx.strokeRect(drawStartX, drawStartY, w, h);
+    } else if (drawTool === 'circle') {
+      const rx = Math.abs(w) / 2;
+      const ry = Math.abs(h) / 2;
+      const cx = drawStartX + w / 2;
+      const cy = drawStartY + h / 2;
+      drawCtx.beginPath();
+      drawCtx.ellipse(cx, cy, rx, ry, 0, 0, Math.PI * 2);
+      drawCtx.stroke();
+    }
+    drawCtx.restore();
+  }
+}
+function moveDrawTouch(e) {
+  e.preventDefault();
+  if (!drawDrawing) return;
+  const touch = e.touches[0];
+  moveDraw({ clientX: touch.clientX, clientY: touch.clientY });
+}
+function endDraw() {
+  if (!drawDrawing) return;
+  drawDrawing = false;
+  if (drawCanvas._currentStroke && drawCanvas._currentStroke.points.length > 0) {
+    if (drawTool === 'rect' || drawTool === 'circle') {
+      drawCanvas._currentStroke.shape = drawTool;
+    }
+    drawCanvas._strokes.push(drawCanvas._currentStroke);
+  }
+  drawCanvas._currentStroke = null;
+}
+function drawDrawStrokeSegment(s) {
+  drawCtx.save();
+  drawCtx.strokeStyle = s.color;
+  drawCtx.lineWidth = s.size;
+  if (s.tool === 'eraser') {
+    drawCtx.globalCompositeOperation = 'destination-out';
+    drawCtx.lineWidth = s.size * 4;
+  } else {
+    drawCtx.globalCompositeOperation = 'source-over';
+  }
+  drawCtx.beginPath();
+  const pts = s.points;
+  if (pts.length === 1) {
+    drawCtx.arc(pts[0][0], pts[0][1], s.size / 2, 0, Math.PI * 2);
+    drawCtx.fillStyle = s.color;
+    drawCtx.fill();
+  } else {
+    drawCtx.moveTo(pts[pts.length - 2][0], pts[pts.length - 2][1]);
+    drawCtx.lineTo(pts[pts.length - 1][0], pts[pts.length - 1][1]);
+    drawCtx.stroke();
+  }
+  drawCtx.restore();
+}
+function setDrawTool(tool, btn) {
+  drawTool = tool;
+  btn.parentElement.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+function clearDrawCanvas() {
+  drawCtx.clearRect(0, 0, drawCanvas.width, drawCanvas.height);
+  drawCtx.fillStyle = '#ffffff';
+  drawCtx.fillRect(0, 0, drawCanvas.width, drawCanvas.height);
+  drawCanvas._strokes = [];
+}
+
+function openDrawingModal() {
+  closeMenu();
+  document.getElementById('drawingModal').style.display = 'flex';
+  clearDrawCanvas();
+  document.getElementById('drawAuthor').focus();
+}
+function closeDrawingModal() {
+  document.getElementById('drawingModal').style.display = 'none';
+  clearDrawCanvas();
+}
+async function submitDrawingSticker() {
+  if (drawCanvas._strokes.length === 0) { showToast('请先画点什么'); return; }
+  const author = document.getElementById('drawAuthor').value.trim() || '匿名';
+  const pos = getPendingPos();
+  const data = {
+    content_type: 'drawing',
+    author,
+    drawing_data: JSON.parse(JSON.stringify(drawCanvas._strokes)),
+    bg_color: '#FFFFFF',
+    pos_x: pos.x,
+    pos_y: pos.y,
+    rotation: pos.rot,
+    width: 320,
+    height: 300
+  };
+  try {
+    const s = await saveSticker(data);
+    stickers.unshift(s);
+    closeDrawingModal();
+    renderStickers();
+    showToast('绘图便签已贴上 ✨');
+  } catch (e) {
+    showToast('保存失败，请重试');
+  }
+}
+
+// ========== Image Upload ==========
+function openImageModal() {
+  closeMenu();
+  document.getElementById('imageModal').style.display = 'flex';
+  resetImageUpload();
+  document.getElementById('imgAuthor').focus();
+}
+function closeImageModal() {
+  document.getElementById('imageModal').style.display = 'none';
+  resetImageUpload();
+}
+function resetImageUpload() {
+  selectedImageUrl = '';
+  selectedImageFile = null;
+  document.getElementById('imgFile').value = '';
+  document.getElementById('uploadPreview').style.display = 'none';
+  document.getElementById('imgSubmitBtn').disabled = true;
+  document.getElementById('imgCaption').value = '';
+}
+
+function setupUploadDrag() {
+  const zone = document.getElementById('uploadZone');
+  zone.addEventListener('dragover', (e) => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+    if (e.dataTransfer.files.length > 0) {
+      handleImageFile(e.dataTransfer.files[0]);
+    }
+  });
+}
+
+function handleImageSelect(e) {
+  if (e.target.files.length > 0) {
+    handleImageFile(e.target.files[0]);
+  }
+}
+
+function handleImageFile(file) {
+  if (!file.type.startsWith('image/')) { showToast('请选择图片文件'); return; }
+  selectedImageFile = file;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const preview = document.getElementById('uploadPreview');
+    preview.src = ev.target.result;
+    preview.style.display = 'block';
+    document.getElementById('imgSubmitBtn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitImageSticker() {
+  if (!selectedImageFile) { showToast('请先选择图片'); return; }
+  const author = document.getElementById('imgAuthor').value.trim() || '匿名';
+  const caption = document.getElementById('imgCaption').value.trim();
+  const formData = new FormData();
+  formData.append('file', selectedImageFile);
+  let imageUrl = '';
+  try {
+    const uploadRes = await fetch('/api/upload', { method: 'POST', body: formData });
+    if (!uploadRes.ok) throw new Error('上传失败');
+    const uploadData = await uploadRes.json();
+    imageUrl = uploadData.url;
+  } catch (e) {
+    showToast('图片上传失败');
+    return;
+  }
+  const pos = getPendingPos();
+  const data = {
+    content_type: 'image',
+    author,
+    text_content: caption,
+    image_path: imageUrl,
+    bg_color: '#FFFFFF',
+    pos_x: pos.x,
+    pos_y: pos.y,
+    rotation: pos.rot,
+    width: 290,
+    height: 300
+  };
+  try {
+    const s = await saveSticker(data);
+    stickers.unshift(s);
+    closeImageModal();
+    renderStickers();
+    showToast('图片便签已贴上 ✨');
+  } catch (e) {
+    showToast('保存失败，请重试');
+  }
+}
+
+// ========== Drag & Drop on Wall ==========
+function setupDragAndDrop() {
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+  document.addEventListener('touchmove', onTouchMove, { passive: false });
+  document.addEventListener('touchend', onTouchEnd);
+}
+
+function onStickerMouseDown(e) {
+  if (e.button !== 0) return;
+  e.preventDefault();
+  hasMoved = false;
+  startDrag(e.currentTarget, e.clientX, e.clientY);
+}
+
+function onStickerTouchStart(e) {
+  hasMoved = false;
+  const touch = e.touches[0];
+  startDrag(e.currentTarget, touch.clientX, touch.clientY);
+}
+
+function startDrag(el, clientX, clientY) {
+  dragTarget = el;
+  const rect = el.getBoundingClientRect();
+  dragOffsetX = clientX - rect.left;
+  dragOffsetY = clientY - rect.top;
+  dragStartX_wall = clientX;
+  dragStartY_wall = clientY;
+  dragZIndex = parseInt(el.style.zIndex) || 1;
+  el.style.zIndex = 999;
+}
+
+function onMouseMove(e) {
+  if (!dragTarget) return;
+  const dx = e.clientX - dragStartX_wall;
+  const dy = e.clientY - dragStartY_wall;
+  if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+    if (!hasMoved) {
+      hasMoved = true;
+      dragTarget.classList.add('dragging');
+    }
+  }
+  if (hasMoved) {
+    moveDrag(e.clientX, e.clientY);
+  }
+}
+
+function onTouchMove(e) {
+  if (!dragTarget) return;
+  e.preventDefault();
+  const touch = e.touches[0];
+  const dx = touch.clientX - dragStartX_wall;
+  const dy = touch.clientY - dragStartY_wall;
+  if (Math.abs(dx) > DRAG_THRESHOLD || Math.abs(dy) > DRAG_THRESHOLD) {
+    if (!hasMoved) {
+      hasMoved = true;
+      dragTarget.classList.add('dragging');
+    }
+  }
+  if (hasMoved) {
+    moveDrag(touch.clientX, touch.clientY);
+  }
+}
+
+function moveDrag(clientX, clientY) {
+  const wall = document.getElementById('wall');
+  const wallRect = wall.getBoundingClientRect();
+  const newLeft = clientX - wallRect.left - dragOffsetX;
+  const newTop = clientY - wallRect.top - dragOffsetY;
+  dragTarget.style.left = newLeft + 'px';
+  dragTarget.style.top = newTop + 'px';
+}
+
+function onMouseUp() {
+  endDrag();
+}
+function onTouchEnd() {
+  endDrag();
+}
+
+async function endDrag() {
+  if (!dragTarget) return;
+  const id = dragTarget.dataset.id;
+  const wasMoved = hasMoved;
+  dragTarget.classList.remove('dragging');
+  dragTarget.style.zIndex = dragZIndex;
+
+  if (wasMoved) {
+    // 发生了拖拽，保存新位置
+    const left = parseFloat(dragTarget.style.left) || 0;
+    const top = parseFloat(dragTarget.style.top) || 0;
+    dragTarget = null;
+    hasMoved = false;
+    try {
+      await updateStickerPos(id, left, top);
+      const s = stickers.find(s => s.id === id);
+      if (s) { s.pos_x = left; s.pos_y = top; }
+    } catch (e) {
+      console.error('更新位置失败:', e);
+    }
+  } else {
+    // 没有移动 = 点击，打开详情
+    dragTarget = null;
+    hasMoved = false;
+    openDetail(id);
+  }
+}
+
+// ========== Helpers ==========
+function getSelectedColor(groupId) {
+  const active = document.querySelector(`#${groupId} .color-dot.active`);
+  return active ? active.dataset.color : '#FFF9E6';
+}
+function selectColor(dot, groupId) {
+  document.querySelectorAll(`#${groupId} .color-dot`).forEach(d => d.classList.remove('active'));
+  dot.classList.add('active');
+}
+
+function showToast(msg) {
+  const existing = document.querySelector('.toast');
+  if (existing) existing.remove();
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity = '0'; t.style.transition = 'opacity 0.3s'; }, 2000);
+  setTimeout(() => t.remove(), 2400);
+}
+</script>
+</body>
+</html>
