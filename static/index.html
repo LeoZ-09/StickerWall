@@ -29,6 +29,7 @@
   --transition-smooth: 0.35s cubic-bezier(0.25, 0.1, 0.25, 1);
   --transition-spring: 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   --safe-bottom: env(safe-area-inset-bottom, 16px);
+  --ref-width: 1600px;
 }
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body {
@@ -48,7 +49,12 @@ html, body {
   background: radial-gradient(ellipse at 20% 20%, #e0e0e8 0%, transparent 50%),
               radial-gradient(ellipse at 80% 60%, #d8d8e0 0%, transparent 50%),
               var(--wall-bg);
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+#stickers-container {
+  position: relative;
+  transform-origin: top left;
 }
 .wall::before {
   content: ''; position: absolute; inset: 0;
@@ -190,7 +196,7 @@ html, body {
   to { transform: scale(1) translateY(0); opacity: 1; }
 }
 
-/* ── Floating top bar (over content) ── */
+/* Floating top bar (over content) */
 .create-floating-top {
   position: absolute; top: 0; left: 0; right: 0; z-index: 10;
   display: flex; align-items: center; justify-content: space-between;
@@ -236,11 +242,11 @@ html, body {
 .create-close:active { transform: scale(0.9); }
 
 
-/* ── Body ── */
+/* Body */
 .create-body {
   flex: 1; overflow-y: auto; display: flex; flex-direction: column;
-  padding-top: 58px;    /* space for floating top bar */
-  padding-bottom: 100px; /* space for unified footer (2 rows) */
+  padding-top: 58px;
+  padding-bottom: 100px;
 }
 .create-textarea {
   flex: 1; min-height: 340px; padding: 8px 20px 20px; border: none;
@@ -360,7 +366,7 @@ html, body {
 }
 .canvas-wrap canvas { display: block; width: 100%; cursor: crosshair; }
 
-/* Image-only preview (full body, no editor) */
+/* Image-only preview */
 .create-image-preview {
   flex: 1; display: none; align-items: center; justify-content: center;
   padding: 62px 20px 62px;
@@ -370,7 +376,7 @@ html, body {
   border-radius: var(--radius-md);
 }
 
-/* ── Unified Bottom Bar (name + image + color + submit) ── */
+/* Unified Bottom Bar */
 .create-footer-bar {
   position: absolute; bottom: 0; left: 0; right: 0; z-index: 11;
   display: flex; flex-direction: column; gap: 8px;
@@ -470,7 +476,6 @@ html, body {
 <div class="create-overlay" id="createOverlay" style="display:none" onclick="if(event.target===this)closeCreateModal()">
   <div class="create-modal" onclick="event.stopPropagation()">
 
-    <!-- Floating top: toggle + close -->
     <div class="create-floating-top">
       <div class="toggle-switch" id="modeToggle">
 <button class="toggle-option active" data-mode="text" onclick="setCreateMode('text')" title="文字">📝</button>
@@ -479,7 +484,6 @@ html, body {
       <button class="create-close" onclick="closeCreateModal()">✕</button>
     </div>
 
-    <!-- Body -->
     <div class="create-body" id="createBody">
       <textarea class="create-textarea" id="createTextarea" placeholder="写下你的想法…" rows="5"></textarea>
       <div class="create-canvas-panel" id="createCanvasPanel" style="display:none;">
@@ -530,7 +534,6 @@ html, body {
 
     <input type="file" id="createImgFile" accept="image/*" style="display:none" onchange="handleCreateImage(event)">
 
-    <!-- Unified footer bar: name + image + color + submit -->
     <div class="create-footer-bar">
       <div class="footer-row-top">
         <input type="text" class="create-name-field" id="createName" placeholder="你的名字" maxlength="30">
@@ -564,7 +567,7 @@ let pendingPosX = null, pendingPosY = null;
 let autoRefreshTimer = null;
 
 // Create modal state
-let createMode = 'text';  // 'text' | 'draw'
+let createMode = 'text';
 let createImageFile = null;
 
 // Canvas state
@@ -578,12 +581,38 @@ let dragStartX_wall = 0, dragStartY_wall = 0, dragZIndex = 1;
 let hasMoved = false;
 const DRAG_THRESHOLD = 5;
 
+// Scale factor: reference width 1200px, maps to actual screen width
+const REF_WIDTH = 1600;
+
+function getScale() {
+  const wall = document.getElementById('wall');
+  return wall ? wall.clientWidth / REF_WIDTH : 1;
+}
+
+function updateContainerScale() {
+  const container = document.getElementById('stickers-container');
+  const wall = document.getElementById('wall');
+  if (!container || !wall) return;
+  const s = getScale();
+  container.style.transform = `scale(${s})`;
+  container.style.width = REF_WIDTH + 'px';
+  // Dynamically compute height needed: find max bottom edge of all stickers + padding
+  let maxBottom = 800; // default
+  if (stickers.length > 0) {
+    maxBottom = Math.max(...stickers.map(s => (s.pos_y || 0) + (s.height || 200)));
+  }
+  container.style.height = Math.max(window.innerHeight / s + 400, maxBottom + 200) + 'px';
+}
+
 // ========== Init ==========
 document.addEventListener('DOMContentLoaded', () => {
   refreshWall();
   initCreateCanvas();
   setupDragAndDrop();
   setupWallClick();
+  window.addEventListener('resize', () => {
+    updateContainerScale();
+  });
   autoRefreshTimer = setInterval(refreshWallSilent, 8000);
 });
 
@@ -599,8 +628,10 @@ function setupWallClick() {
     if (e.target.closest('.sticker')) return;
     if (document.getElementById('createOverlay').style.display === 'flex') return;
     const rect = wall.getBoundingClientRect();
-    pendingPosX = e.clientX - rect.left;
-    pendingPosY = e.clientY - rect.top;
+    const s = getScale();
+    // Convert screen coords to logical coords (divide by scale)
+    pendingPosX = (e.clientX - rect.left) / s;
+    pendingPosY = (e.clientY - rect.top + wall.scrollTop) / s;
     showWallHint(e.clientX, e.clientY);
     openCreateModal();
   });
@@ -627,6 +658,7 @@ function renderStickers() {
       el.style.setProperty('--rot', s.rotation + 'deg'); container.appendChild(el);
     }
     updateStickerContent(el, s);
+    // Stored coords are logical (reference 1200px), render 1:1 in scaled container
     el.style.left = s.pos_x + 'px'; el.style.top = s.pos_y + 'px';
     el.style.width = s.width + 'px'; el.style.height = s.height + 'px';
     el.style.transform = `rotate(${s.rotation}deg)`; el.style.zIndex = idx + 1; el.dataset.id = s.id;
@@ -637,6 +669,7 @@ function renderStickers() {
       setTimeout(() => el.remove(), 300);
     }
   });
+  updateContainerScale();
 }
 function createStickerElement(s) {
   const el = document.createElement('div'); el.className = 'sticker'; el.dataset.id = s.id;
@@ -874,7 +907,7 @@ let cpDragging = false;
 
 function updateColorPickerUI() {
   const hAngle = cpData.hue * Math.PI / 180;
-  const ringMidR = 66; /* midpoint of ring: (57+75)/2 */
+  const ringMidR = 66;
   const hx = Math.cos(hAngle) * ringMidR, hy = Math.sin(hAngle) * ringMidR;
   document.getElementById('hueThumb').style.transform = `translate(${hx}px, ${hy}px)`;
   const sbR = 40;
@@ -915,7 +948,6 @@ function handleCreateImage(e) {
   reader.onload = ev => {
     document.getElementById('createImgEl').src = ev.target.result;
     document.getElementById('createImagePreview').style.display = 'flex';
-    // 隐藏文字/绘图编辑区，只显示图片预览
     document.getElementById('createTextarea').style.display = 'none';
     document.getElementById('createCanvasPanel').style.display = 'none';
     document.getElementById('modeToggle').style.display = 'none';
@@ -950,12 +982,16 @@ async function submitCreateSticker() {
 }
 
 function getCreatePos() {
-  if (pendingPosX !== null && pendingPosY !== null) { const p = { x: pendingPosX - 135, y: pendingPosY - 110, rot: (Math.random() - 0.5) * 4 }; pendingPosX = null; pendingPosY = null; return p; }
+  if (pendingPosX !== null && pendingPosY !== null) {
+    // pendingPosX/Y are already in logical coordinates
+    const p = { x: pendingPosX - 135, y: pendingPosY - 110, rot: (Math.random() - 0.5) * 4 };
+    pendingPosX = null; pendingPosY = null; return p;
+  }
   return randomPos();
 }
 function randomPos() {
-  const w = document.getElementById('wall').clientWidth, h = document.getElementById('wall').clientHeight;
-  return { x: 40 + Math.random() * Math.max(0, w - 340), y: 20 + Math.random() * Math.max(0, h - 380), rot: (Math.random() - 0.5) * 6 };
+  // Use logical coordinates (reference 1200px)
+  return { x: 40 + Math.random() * (REF_WIDTH - 340), y: 20 + Math.random() * 400, rot: (Math.random() - 0.5) * 6 };
 }
 function getCreateSelectedColor() { const a = document.querySelector('#createColorDots .color-dot-sm.active'); return a ? a.dataset.color : '#FFF9E6'; }
 function selectCreateColor(dot) { document.querySelectorAll('#createColorDots .color-dot-sm').forEach(d => d.classList.remove('active')); dot.classList.add('active'); }
@@ -968,21 +1004,43 @@ function setupDragAndDrop() {
 function onStickerMouseDown(e) { if (e.button !== 0) return; e.preventDefault(); hasMoved = false; startDrag(e.currentTarget, e.clientX, e.clientY); }
 function onStickerTouchStart(e) { hasMoved = false; const t = e.touches[0]; startDrag(e.currentTarget, t.clientX, t.clientY); }
 function startDrag(el, cx, cy) {
-  dragTarget = el; const r = el.getBoundingClientRect();
-  dragOffsetX = cx - r.left; dragOffsetY = cy - r.top;
-  dragStartX_wall = cx; dragStartY_wall = cy;
-  dragZIndex = parseInt(el.style.zIndex) || 1; el.style.zIndex = 999;
+  dragTarget = el;
+  const r = el.getBoundingClientRect();
+  dragOffsetX = cx - r.left;
+  dragOffsetY = cy - r.top;
+  dragStartX_wall = cx;
+  dragStartY_wall = cy;
+  dragZIndex = parseInt(el.style.zIndex) || 1;
+  el.style.zIndex = 999;
 }
 function onMouseMove(e) { if (!dragTarget) return; if (Math.abs(e.clientX - dragStartX_wall) > DRAG_THRESHOLD || Math.abs(e.clientY - dragStartY_wall) > DRAG_THRESHOLD) { if (!hasMoved) { hasMoved = true; dragTarget.classList.add('dragging'); } } if (hasMoved) moveDrag(e.clientX, e.clientY); }
 function onTouchMove(e) { if (!dragTarget) return; e.preventDefault(); const t = e.touches[0]; if (Math.abs(t.clientX - dragStartX_wall) > DRAG_THRESHOLD || Math.abs(t.clientY - dragStartY_wall) > DRAG_THRESHOLD) { if (!hasMoved) { hasMoved = true; dragTarget.classList.add('dragging'); } } if (hasMoved) moveDrag(t.clientX, t.clientY); }
-function moveDrag(cx, cy) { const r = document.getElementById('wall').getBoundingClientRect(); dragTarget.style.left = (cx - r.left - dragOffsetX) + 'px'; dragTarget.style.top = (cy - r.top - dragOffsetY) + 'px'; }
+function moveDrag(cx, cy) {
+  const wall = document.getElementById('wall');
+  const wallRect = wall.getBoundingClientRect();
+  const s = getScale();
+  const logicalX = (cx - wallRect.left) / s;
+  const logicalY = (cy - wallRect.top + wall.scrollTop) / s;
+  let newLeft = logicalX - dragOffsetX / s;
+  let newTop = logicalY - dragOffsetY / s;
+  const stickerWidth = parseFloat(dragTarget.style.width) || 200;
+  newLeft = Math.max(0, Math.min(newLeft, REF_WIDTH - stickerWidth));
+  newTop = Math.max(0, newTop);
+  dragTarget.style.left = newLeft + 'px';
+  dragTarget.style.top = newTop + 'px';
+}
 function onMouseUp() { endDrag(); }
 function onTouchEnd() { endDrag(); }
 async function endDrag() {
-  if (!dragTarget) return; const id = dragTarget.dataset.id, wasMoved = hasMoved;
-  dragTarget.classList.remove('dragging'); dragTarget.style.zIndex = dragZIndex;
+  if (!dragTarget) return;
+  const id = dragTarget.dataset.id;
+  const wasMoved = hasMoved;
+  dragTarget.classList.remove('dragging');
+  dragTarget.style.zIndex = dragZIndex;
   if (wasMoved) {
-    const l = parseFloat(dragTarget.style.left) || 0, t = parseFloat(dragTarget.style.top) || 0;
+    // Store logical coordinates
+    const l = parseFloat(dragTarget.style.left) || 0;
+    const t = parseFloat(dragTarget.style.top) || 0;
     dragTarget = null; hasMoved = false;
     try { await updateStickerPos(id, l, t); const s = stickers.find(s => s.id === id); if (s) { s.pos_x = l; s.pos_y = t; } } catch {}
   } else { dragTarget = null; hasMoved = false; openDetail(id); }
