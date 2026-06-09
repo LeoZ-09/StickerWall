@@ -1,0 +1,5 @@
+data/stickers.db
+data/stickers.db-wal
+data/stickers.db-shm
+data/stickers.json.bak
+node_modules/
