@@ -8,6 +8,8 @@ const path = require('path');
 const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 const sharp = require('sharp');
+const http = require('http');
+const { WebSocketServer } = require('ws');
 
 const app = express();
 const PORT = 5050;
@@ -44,6 +46,30 @@ function writeDB(data) {
 function nowCST() {
   return new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai', hour12: false });
 }
+
+// ==================== WebSocket (实时同步) ====================
+const server = http.createServer(app);
+const wss = new WebSocketServer({ server });
+const wsClients = new Set();
+
+wss.on('connection', function connection(ws) {
+  wsClients.add(ws);
+  ws.on('close', function() { wsClients.delete(ws); });
+  ws.on('error', function() { wsClients.delete(ws); });
+});
+
+function wsBroadcast(type, payload) {
+  const msg = JSON.stringify(Object.assign({ type: type }, payload));
+  wsClients.forEach(function(client) {
+    if (client.readyState === 1) {
+      try { client.send(msg); } catch(e) { wsClients.delete(client); }
+    }
+  });
+}
+
+function wsStickerCreated(sticker) { wsBroadcast('sticker:created', { sticker: sticker }); }
+function wsStickerUpdated(sticker) { wsBroadcast('sticker:updated', { sticker: sticker }); }
+function wsStickerDeleted(id)      { wsBroadcast('sticker:deleted', { id: id }); }
 
 // ==================== Upload ====================
 const storage = multer.memoryStorage();
@@ -93,6 +119,7 @@ app.post('/api/stickers', (req, res) => {
   stickers.push(sticker);
   writeDB(stickers);
   res.status(201).json(sticker);
+  wsStickerCreated(sticker);
 });
 
 // Update sticker
@@ -110,6 +137,7 @@ app.put('/api/stickers/:id', (req, res) => {
   stickers[index].updated_at = nowCST();
   writeDB(stickers);
   res.json(stickers[index]);
+  wsStickerUpdated(stickers[index]);
 });
 
 // Delete sticker
@@ -123,6 +151,7 @@ app.delete('/api/stickers/:id', (req, res) => {
   }
   stickers = stickers.filter(s => s.id !== id);
   writeDB(stickers);
+  wsStickerDeleted(id);
   res.json({ ok: true });
 });
 
@@ -157,9 +186,9 @@ app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'static', 'index.html'));
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log('');
   console.log('  📌 便签墙 (StickerWall)');
-  console.log(`  🚀 服务已启动: http://localhost:${PORT}`);
+  console.log(`  🚀 服务已启动: http://localhost:${PORT} (WebSocket 实时同步已开启)`);
   console.log('');
 });
