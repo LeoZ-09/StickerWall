@@ -21,6 +21,7 @@ app.use('/static', express.static(path.join(__dirname, 'static')));
 // ==================== JSON File Database ====================
 const DATA_DIR = path.join(__dirname, 'data');
 const DB_FILE = path.join(DATA_DIR, 'stickers.json');
+const CONN_DB_FILE = path.join(DATA_DIR, 'connections.json');
 const UPLOAD_DIR = path.join(__dirname, 'static', 'uploads');
 
 fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -28,6 +29,9 @@ fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 if (!fs.existsSync(DB_FILE)) {
   fs.writeFileSync(DB_FILE, '[]', 'utf-8');
+}
+if (!fs.existsSync(CONN_DB_FILE)) {
+  fs.writeFileSync(CONN_DB_FILE, '[]', 'utf-8');
 }
 
 function readDB() {
@@ -41,6 +45,19 @@ function readDB() {
 
 function writeDB(data) {
   fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+function readConns() {
+  try {
+    const raw = fs.readFileSync(CONN_DB_FILE, 'utf-8');
+    return JSON.parse(raw);
+  } catch {
+    return [];
+  }
+}
+
+function writeConns(data) {
+  fs.writeFileSync(CONN_DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
 }
 
 function nowCST() {
@@ -67,9 +84,11 @@ function wsBroadcast(type, payload) {
   });
 }
 
-function wsStickerCreated(sticker) { wsBroadcast('sticker:created', { sticker: sticker }); }
-function wsStickerUpdated(sticker) { wsBroadcast('sticker:updated', { sticker: sticker }); }
-function wsStickerDeleted(id)      { wsBroadcast('sticker:deleted', { id: id }); }
+function wsStickerCreated(sticker)   { wsBroadcast('sticker:created',   { sticker: sticker }); }
+function wsStickerUpdated(sticker)   { wsBroadcast('sticker:updated',   { sticker: sticker }); }
+function wsStickerDeleted(id)        { wsBroadcast('sticker:deleted',   { id: id }); }
+function wsConnectionCreated(conn)   { wsBroadcast('connection:created', { connection: conn }); }
+function wsConnectionDeleted(id)     { wsBroadcast('connection:deleted', { id: id }); }
 
 // ==================== Upload ====================
 const storage = multer.memoryStorage();
@@ -129,7 +148,7 @@ app.put('/api/stickers/:id', (req, res) => {
   const stickers = readDB();
   const index = stickers.findIndex(s => s.id === id);
   if (index === -1) return res.status(404).json({ error: '未找到便签' });
-  
+
   const allowed = ['author', 'text_content', 'bg_color', 'pos_x', 'pos_y', 'rotation', 'width', 'height', 'image_path', 'content_type', 'drawing_data', 'handwriting_data'];
   allowed.forEach(k => {
     if (data[k] !== undefined) stickers[index][k] = data[k];
@@ -140,7 +159,16 @@ app.put('/api/stickers/:id', (req, res) => {
   wsStickerUpdated(stickers[index]);
 });
 
-// Delete sticker
+// Helper: cascade delete connections involving a sticker
+function cascadeDeleteConnections(stickerId) {
+  let conns = readConns();
+  const affected = conns.filter(c => c.id_a === stickerId || c.id_b === stickerId);
+  affected.forEach(c => wsConnectionDeleted(c.id));
+  conns = conns.filter(c => c.id_a !== stickerId && c.id_b !== stickerId);
+  writeConns(conns);
+}
+
+// Delete sticker (with cascade)
 app.delete('/api/stickers/:id', (req, res) => {
   const { id } = req.params;
   let stickers = readDB();
@@ -149,9 +177,62 @@ app.delete('/api/stickers/:id', (req, res) => {
     const fp = path.join(__dirname, target.image_path.replace(/^\//, ''));
     if (fs.existsSync(fp)) try { fs.unlinkSync(fp); } catch {}
   }
+  cascadeDeleteConnections(id);
   stickers = stickers.filter(s => s.id !== id);
   writeDB(stickers);
   wsStickerDeleted(id);
+  res.json({ ok: true });
+});
+
+// ==================== Connections Routes ====================
+
+// Get all connections
+app.get('/api/connections', (req, res) => {
+  res.json(readConns());
+});
+
+// Get connections for a specific sticker
+app.get('/api/stickers/:id/connections', (req, res) => {
+  const { id } = req.params;
+  const conns = readConns().filter(c => c.id_a === id || c.id_b === id);
+  res.json(conns);
+});
+
+// Create connection (undirected edge, sorted pair)
+app.post('/api/connections', (req, res) => {
+  const { id_a, id_b, label } = req.body;
+  if (!id_a || !id_b) return res.status(400).json({ error: '缺少 id_a 或 id_b' });
+  if (id_a === id_b) return res.status(400).json({ error: '不能与自身建立联系' });
+
+  // Sort to canonical order
+  let [a, b] = [id_a, id_b];
+  if (a > b) [a, b] = [b, a];
+
+  const conns = readConns();
+  // Check duplicate
+  if (conns.some(c => c.id_a === a && c.id_b === b)) {
+    return res.status(409).json({ error: '已存在相同联系' });
+  }
+  const conn = {
+    id: uuidv4().slice(0, 8),
+    id_a: a,
+    id_b: b,
+    label: label || '',
+    created_at: nowCST()
+  };
+  conns.push(conn);
+  writeConns(conns);
+  res.status(201).json(conn);
+  wsConnectionCreated(conn);
+});
+
+// Delete connection
+app.delete('/api/connections/:id', (req, res) => {
+  const { id } = req.params;
+  let conns = readConns();
+  conns = conns.filter(c => c.id !== id);
+  writeConns(conns);
+  wsConnectionDeleted(id);
   res.json({ ok: true });
 });
 
@@ -161,10 +242,10 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   try {
     const filename = uuidv4() + path.extname(req.file.originalname).toLowerCase();
     const savePath = path.join(UPLOAD_DIR, filename);
-    
+
     let pipeline = sharp(req.file.buffer)
       .resize({ width: 1200, height: 1200, fit: 'inside', withoutEnlargement: true });
-    
+
     const ext = path.extname(filename).toLowerCase();
     if (ext === '.png') {
       await pipeline.png({ quality: 85 }).toFile(savePath);
@@ -173,7 +254,7 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
     } else {
       await pipeline.jpeg({ quality: 85, mozjpeg: true }).toFile(savePath);
     }
-    
+
     res.json({ url: `/static/uploads/${filename}`, filename });
   } catch (err) {
     console.error('图片处理错误:', err);

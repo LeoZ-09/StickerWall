@@ -995,13 +995,147 @@ html, body {
 .bg-6 { background: linear-gradient(160deg, rgba(248, 240, 255, 0.92) 0%, rgba(232, 220, 250, 0.78) 100%); }
 .bg-7 { background: linear-gradient(160deg, rgba(255, 255, 255, 0.94) 0%, rgba(245, 248, 255, 0.84) 100%); }
 </style>
+<style>
+/* ========== 便签关联线 ========== */
+.connections-layer {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+  z-index: 0; pointer-events: none; overflow: visible;
+}
+.conn-line {
+  fill: none; stroke: rgba(79, 140, 255, 0.25);
+  stroke-width: 1.5; stroke-linecap: round;
+  cursor: pointer; pointer-events: stroke;
+  transition: stroke 0.15s ease, stroke-width 0.15s ease;
+}
+.conn-line:hover { stroke: rgba(79, 140, 255, 0.55); stroke-width: 2.5; }
+.conn-line.entering {
+  stroke-dasharray: 1200; stroke-dashoffset: 1200;
+  animation: connDrawIn 0.6s ease forwards;
+}
+@keyframes connDrawIn { to { stroke-dashoffset: 0; } }
+.conn-drag-temp {
+  fill: none; stroke: rgba(79, 140, 255, 0.50);
+  stroke-width: 2; stroke-dasharray: 8 4; pointer-events: none;
+}
+.conn-drag-source { filter: brightness(1.08) drop-shadow(0 0 12px rgba(79,140,255,0.3)); }
+.conn-drag-hover { outline: 2px solid rgba(79, 140, 255, 0.50); outline-offset: 4px; }
+.conn-bubble {
+  position: fixed; z-index: 600;
+  background: var(--surface-strong);
+  backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md); padding: 12px;
+  box-shadow: var(--elev-soft);
+  animation: bubbleIn 0.2s ease;
+  display: flex; align-items: center; justify-content: center;
+}
+.conn-bubble-delete {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: none;
+  background: linear-gradient(180deg, #f87171 0%, var(--danger) 100%);
+  color: #fff; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.30), inset 0 1px 0 rgba(255, 255, 255, 0.35);
+  transition: all var(--motion-fast) var(--ease-spring);
+  margin: 0 auto;
+}
+.conn-bubble-delete:hover { transform: scale(1.08); box-shadow: 0 6px 16px rgba(239, 68, 68, 0.40), inset 0 1px 0 rgba(255, 255, 255, 0.45); }
+.conn-bubble-delete:active { transform: scale(0.92); }
+.conn-bubble-delete svg { width: 16px; height: 16px; }
+.conn-select-menu {
+  position: fixed; z-index: 700;
+  background: var(--surface-strong);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-md); padding: 6px;
+  box-shadow: var(--elev-modal);
+  animation: modalPop 0.25s var(--ease-spring);
+  min-width: 200px; max-width: 320px;
+}
+.conn-select-item {
+  display: block; width: 100%;
+  padding: 10px 14px; border-radius: var(--radius-sm);
+  border: none; background: transparent;
+  font-family: var(--font-body); font-size: 13px;
+  color: var(--fg); cursor: pointer; text-align: left;
+  transition: background var(--motion-fast) var(--ease-standard);
+}
+.conn-select-item:hover { background: var(--accent-soft); }
+.conn-select-item:not(:last-child) { border-bottom: 1px solid var(--border-ink); }
+.conn-picker-overlay {
+  position: fixed; inset: 0; z-index: 600;
+  background: var(--overlay-scrim);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  display: flex; align-items: center; justify-content: center; padding: 32px;
+}
+.conn-picker-modal {
+  background: var(--surface-strong); border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg); width: 520px; max-width: 90vw; max-height: 70vh;
+  display: flex; flex-direction: column; box-shadow: var(--elev-modal);
+  animation: modalPop 0.3s var(--ease-spring); overflow: hidden;
+}
+.conn-picker-header {
+  display: flex; align-items: center; gap: 12px;
+  padding: 16px 20px; border-bottom: 1px solid var(--border-ink);
+}
+.conn-picker-search {
+  flex: 1; padding: 9px 14px; border: 1px solid var(--border-strong);
+  border-radius: var(--radius-pill); background: var(--surface-soft);
+  font-family: var(--font-body); font-size: 14px; color: var(--fg);
+  outline: none; user-select: text; -webkit-user-select: text;
+}
+.conn-picker-search:focus { border-color: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
+.conn-picker-confirm {
+  width: 40px; height: 40px; padding: 0; border-radius: 50%; border: none;
+  background: linear-gradient(180deg, #5b97ff 0%, #4f8cff 100%);
+  color: #fff; cursor: pointer; display: flex; align-items: center;
+  justify-content: center; box-shadow: 0 4px 12px rgba(24,86,255,0.30);
+  flex-shrink: 0; transition: transform var(--motion-fast) var(--ease-spring);
+}
+.conn-picker-confirm:hover { transform: scale(1.06); }
+.conn-picker-confirm:active { transform: scale(0.94); }
+.conn-picker-confirm svg { width: 18px; height: 18px; }
+.conn-picker-list {
+  flex: 1; overflow-y: auto; padding: 12px 16px; display: flex;
+  flex-direction: column; gap: 6px;
+}
+.conn-picker-item {
+  padding: 10px 14px; border: 1.5px solid transparent;
+  border-radius: var(--radius-sm); cursor: pointer;
+  transition: all var(--motion-fast) var(--ease-standard);
+  background: var(--surface-soft);
+}
+.conn-picker-item:hover { background: var(--accent-soft); }
+.conn-picker-item.selected { border-color: var(--accent); background: var(--accent-soft); }
+.conn-picker-item.disabled { opacity: 0.4; cursor: not-allowed; background: rgba(16,32,51,0.03); }
+.conn-picker-line {
+  font-size: 13px; line-height: 1.5; color: var(--fg-2);
+  white-space: pre-wrap; word-break: break-word; overflow: hidden;
+  display: -webkit-box; -webkit-box-orient: vertical;
+}
+.conn-picker-line:first-child { font-weight: 600; color: var(--fg); }
+.conn-picker-empty { padding: 32px 16px; text-align: center; color: var(--muted); font-size: 14px; }
+.detail-conn-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  background: var(--surface-soft); border: 1px solid var(--border-strong);
+  font-size: 14px; cursor: pointer; color: var(--fg-2);
+  display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  transition: all var(--motion-fast) var(--ease-spring); flex-shrink: 0;
+}
+.detail-conn-btn:hover { background: var(--surface); color: var(--accent); transform: scale(1.08); }
+.detail-conn-btn:active { transform: scale(0.92); }
+.detail-conn-btn svg { width: 15px; height: 15px; }
+</style>
 <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body>
 
 <!-- ==================== WALL ==================== -->
 <div class="wall" id="wall">
-  <div id="stickers-container"></div>
+  <div id="stickers-container">
+    <svg class="connections-layer" id="connectionsLayer"></svg>
+  </div>
 </div>
 
 <!-- ==================== BOTTOM BAR (AI Chat + Settings) ==================== -->
@@ -1092,17 +1226,50 @@ html, body {
         <div class="author" id="detailAuthor"></div>
         <div class="date" id="detailDate"></div>
       </div>
-      <button class="detail-close detail-delete-btn" onclick="deleteFromDetail()" title="删除">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;">
-          <polyline points="3 6 5 6 21 6"></polyline>
-          <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
-          <path d="M10 11v6"></path>
-          <path d="M14 11v6"></path>
-          <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <button class="detail-conn-btn" id="detailConnBtn" title="建立联系">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"></path>
+            <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"></path>
+          </svg>
+        </button>
+        <button class="detail-close detail-delete-btn" onclick="deleteFromDetail()" title="删除">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px;">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+            <path d="M10 11v6"></path>
+            <path d="M14 11v6"></path>
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path>
+          </svg>
+        </button>
+      </div>
+    </div>
+    <div class="detail-body" id="detailBody"></div>
+  </div>
+</div>
+
+<!-- ==================== CONNECTION BUBBLE ==================== -->
+<div class="conn-bubble" id="connBubble" style="display:none">
+  <button class="conn-bubble-delete" id="connBubbleDelete" title="删除此联系">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;">
+      <polyline points="3 6 5 6 21 6"></polyline>
+      <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path>
+    </svg>
+  </button>
+</div>
+
+<!-- ==================== CONNECTION PICKER MODAL ==================== -->
+<div class="conn-picker-overlay" id="connPickerOverlay" style="display:none">
+  <div class="conn-picker-modal">
+    <div class="conn-picker-header">
+      <input type="text" class="conn-picker-search" id="connPickerSearch" placeholder="搜索便签..." autocomplete="off">
+      <button class="conn-picker-confirm" id="connPickerConfirm" title="确认">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="20 6 9 17 4 12"></polyline>
         </svg>
       </button>
     </div>
-    <div class="detail-body" id="detailBody"></div>
+    <div class="conn-picker-list" id="connPickerList"></div>
   </div>
 </div>
 
@@ -1283,8 +1450,11 @@ document.addEventListener('DOMContentLoaded', () => {
   initSettingsUI();
   setupImageZone();
   window.addEventListener('resize', updateContainerScale);
+  fetchConnections();
   connectWS();
+  setupConnectionUI();
 });
+
 async function refreshWallSilent() {
   try { const res = await fetch('/api/stickers'); stickers = await res.json(); renderStickers(); } catch {}
 }
@@ -1314,6 +1484,16 @@ function connectWS() {
         if (stickers.some(function(s) { return s.id === msg.id; })) {
           stickers = stickers.filter(function(s) { return s.id !== msg.id; });
           renderStickers();
+        }
+      } else if (msg.type === 'connection:created') {
+        if (msg.connection && !connections.some(function(c) { return c.id === msg.connection.id; })) {
+          connections.push(msg.connection);
+          renderConnections();
+        }
+      } else if (msg.type === 'connection:deleted') {
+        if (connections.some(function(c) { return c.id === msg.id; })) {
+          connections = connections.filter(function(c) { return c.id !== msg.id; });
+          renderConnections();
         }
       }
     } catch(e) {}
@@ -1382,13 +1562,16 @@ function renderStickers() {
       setTimeout(() => el.remove(), 300);
     }
   });
-  updateContainerScale();
+  updateContainerScale(); renderConnections();
 }
 function createStickerElement(s) {
   const el = document.createElement('div'); el.className = 'sticker'; el.dataset.id = s.id;
   el.innerHTML = `<div class="sticker-tape"></div><div class="sticker-inner"><div class="sticker-author"></div><div class="sticker-date"></div><div class="sticker-content"></div></div>`;
   el.addEventListener('mousedown', onStickerMouseDown);
   el.addEventListener('touchstart', onStickerTouchStart, { passive: false });
+  el.addEventListener('contextmenu', onStickerContextMenu);
+  el.addEventListener('mousedown', onStickerRightMouseDown);
+  el.addEventListener('mouseup', onConnGlobalUp);
   return el;
 }
 function updateStickerContent(el, s) {
@@ -1486,6 +1669,39 @@ function openDetail(id) {
     const ctx = cvs.getContext('2d'); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cvs.width, cvs.height);
     renderStrokes(ctx, strokes); body.appendChild(cvs);
   }
+
+  // Show connections for this sticker
+  var connSection = document.createElement('div');
+  connSection.style.cssText = 'margin-top:16px;padding-top:12px;border-top:1px solid var(--border-ink);';
+  var connTitle = document.createElement('div');
+  connTitle.style.cssText = 'font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;';
+  connTitle.textContent = '联系';
+  connSection.appendChild(connTitle);
+  var related = connections.filter(function(c) { return c.id_a === id || c.id_b === id; });
+  if (related.length === 0) {
+    var emptyHint = document.createElement('div');
+    emptyHint.style.cssText = 'font-size:13px;color:var(--muted);';
+    emptyHint.textContent = '暂无联系';
+    connSection.appendChild(emptyHint);
+  } else {
+    related.forEach(function(c) {
+      var otherId = c.id_a === id ? c.id_b : c.id_a;
+      var other = stickers.find(function(st) { return st.id === otherId; });
+      var item = document.createElement('div');
+      item.style.cssText = 'display:flex;align-items:center;gap:8px;padding:4px 0;font-size:13px;';
+      var dir = document.createElement('span');
+      dir.style.cssText = 'color:var(--accent);font-size:14px;';
+      dir.textContent = '\u2194';
+      item.appendChild(dir);
+      var txt = document.createElement('span');
+      txt.style.cssText = 'color:var(--fg-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;';
+      txt.textContent = other ? (other.author || '匿名') + ': ' + (other.text_content || '').split('\n')[0].slice(0,30) : otherId;
+      txt.addEventListener('click', function() { closeDetail(); var t = stickers.find(function(st) { return st.id === otherId; }); if (t) openDetail(otherId); });
+      item.appendChild(txt);
+      connSection.appendChild(item);
+    });
+  }
+  body.appendChild(connSection);
   document.getElementById('detailOverlay').style.display = 'flex';
 }
 function closeDetail() {
@@ -1739,6 +1955,7 @@ function selectCreateColor(dot) { document.querySelectorAll('#createColorDots .c
 // ========== Drag on Wall ==========
 function setupDragAndDrop() {
   document.addEventListener('mousemove', onMouseMove); document.addEventListener('mouseup', onMouseUp);
+  document.addEventListener('mousemove', onConnGlobalMove); document.addEventListener('mouseup', onConnGlobalUp);
   document.addEventListener('touchmove', onTouchMove, { passive: false }); document.addEventListener('touchend', onTouchEnd);
 }
 function onStickerMouseDown(e) { if (e.button !== 0) return; e.preventDefault(); hasMoved = false; startDrag(e.currentTarget, e.clientX, e.clientY); }
@@ -1759,6 +1976,11 @@ function moveDrag(cx, cy) {
   newLeft = Math.max(0, Math.min(newLeft, REF_WIDTH - stickerWidth));
   newTop = Math.max(0, newTop);
   dragTarget.style.left = newLeft + 'px'; dragTarget.style.top = newTop + 'px';
+  // Update sticker position in array in real-time for connection line rendering
+  const sid = dragTarget.dataset.id;
+  const sdata = stickers.find(function(st) { return st.id === sid; });
+  if (sdata) { sdata.pos_x = newLeft; sdata.pos_y = newTop; }
+  renderConnections(sid);
 }
 function onMouseUp() { endDrag(); }
 function onTouchEnd() { endDrag(); }
@@ -1886,6 +2108,298 @@ function showToast(msg) {
   const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t);
   t.style.animation = 'toastOut 0.28s var(--ease-spring-soft) forwards';
   setTimeout(() => t.remove(), 2400);
+}
+
+// ========== 便签关联线 ==========
+let connections = [];
+let connDragSource = null;
+let connDragLine = null;
+let activeConnId = null;
+let connPickerCurrentId = null;
+
+async function fetchConnections() {
+  try { const r = await fetch('/api/connections'); connections = await r.json(); renderConnections(); } catch {}
+}
+async function createConnectionApi(idA, idB) {
+  const r = await fetch('/api/connections', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id_a: idA, id_b: idB }) });
+  if (!r.ok) { const e = await r.json(); throw new Error(e.error || '创建失败'); }
+  return r.json();
+}
+async function deleteConnectionApi(id) {
+  await fetch(`/api/connections/${id}`, { method: 'DELETE' });
+}
+function computeAnchor(s) {
+  if (!s) return { x: 0, y: 0 };
+  const cx = s.pos_x + s.width / 2;
+  const cy = s.pos_y + s.height / 2;
+  const rad = (s.rotation || 0) * Math.PI / 180;
+  const cosR = Math.cos(rad), sinR = Math.sin(rad);
+  return { x: cx + (s.height / 2) * sinR, y: cy - (s.height / 2) * cosR };
+}
+function buildConnPath(p1, p2) {
+  var midX = (p1.x + p2.x) / 2, midY = Math.min(p1.y, p2.y);
+  var dist = Math.max(Math.abs(p2.x - p1.x), Math.abs(p2.y - p1.y));
+  var offset = Math.max(dist * 0.25, 30);
+  return 'M ' + p1.x + ',' + p1.y + ' Q ' + midX + ',' + (midY - offset) + ' ' + p2.x + ',' + p2.y;
+}
+var connFirstRender = true;
+function renderConnections(stickerId) {
+  const svg = document.getElementById('connectionsLayer');
+  if (!svg) return;
+  if (stickerId) {
+    // 增量更新：只重绘涉及该便签的联系线（拖拽时调用）
+    connections.forEach(function(c) {
+      if (c.id_a !== stickerId && c.id_b !== stickerId) return;
+      var a = stickers.find(function(s) { return s.id === c.id_a; });
+      var b = stickers.find(function(s) { return s.id === c.id_b; });
+      if (!a || !b) return;
+      var d = buildConnPath(computeAnchor(a), computeAnchor(b));
+      var paths = svg.querySelectorAll('.conn-line');
+      for (var i = 0; i < paths.length; i++) {
+        if (paths[i].dataset.connId === c.id) {
+          paths[i].setAttribute('d', d);
+          break;
+        }
+      }
+    });
+  } else {
+    // 全量重建（初始加载 / 创建 / 删除 / WebSocket）
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    connections.forEach(function(c) {
+      var a = stickers.find(function(s) { return s.id === c.id_a; });
+      var b = stickers.find(function(s) { return s.id === c.id_b; });
+      if (!a || !b) return;
+      var d = buildConnPath(computeAnchor(a), computeAnchor(b));
+      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      path.setAttribute('class', 'conn-line' + (connFirstRender ? ' entering' : ''));
+      path.setAttribute('d', d);
+      path.dataset.connId = c.id;
+      path.addEventListener('click', function(e) { onConnLineClick(e, c.id); });
+      svg.appendChild(path);
+      if (connFirstRender) {
+        setTimeout(function() { path.classList.remove('entering'); }, 650);
+      }
+    });
+    connFirstRender = false;
+  }
+}
+function onConnLineClick(e, connId) {
+  e.stopPropagation();
+  activeConnId = connId;
+  var bubble = document.getElementById('connBubble');
+  bubble.style.display = 'flex';
+  bubble.style.left = (e.clientX - 75) + 'px';
+  bubble.style.top = (e.clientY - 60) + 'px';
+}
+function hideConnBubble() {
+  document.getElementById('connBubble').style.display = 'none';
+  activeConnId = null;
+}
+function setupConnBubbleDelete() {
+  var btn = document.getElementById('connBubbleDelete');
+  if (btn._setup) return; btn._setup = true;
+  btn.addEventListener('click', async function() {
+    if (!activeConnId) return;
+    if (!confirm('确定删除此联系？')) return;
+    await deleteConnectionApi(activeConnId);
+    hideConnBubble();
+    await silentRefresh();
+    showToast('联系已删除');
+  });
+}
+function onStickerContextMenu(e) { e.preventDefault(); }
+function onStickerRightMouseDown(e) {
+  if (e.button !== 2) return;
+  connDragSource = e.currentTarget;
+  connDragSource.classList.add('conn-drag-source');
+  var s = stickers.find(function(st) { return st.id === connDragSource.dataset.id; });
+  if (!s) { connDragSource = null; return; }
+  var anchor = computeAnchor(s);
+  var svg = document.getElementById('connectionsLayer');
+  var line = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  line.setAttribute('class', 'conn-drag-temp');
+  line.setAttribute('d', 'M ' + anchor.x + ',' + anchor.y + ' L ' + anchor.x + ',' + anchor.y);
+  svg.appendChild(line);
+  connDragLine = line;
+}
+function onConnGlobalMove(e) {
+  if (!connDragSource || !connDragLine) return;
+  var s = stickers.find(function(st) { return st.id === connDragSource.dataset.id; });
+  if (!s) return;
+  var anchor = computeAnchor(s);
+  var wall = document.getElementById('wall');
+  var wallRect = wall.getBoundingClientRect();
+  var sc = getScale();
+  var mx = (e.clientX - wallRect.left + wall.scrollLeft) / sc;
+  var my = (e.clientY - wallRect.top + wall.scrollTop) / sc;
+  connDragLine.setAttribute('d', 'M ' + anchor.x + ',' + anchor.y + ' L ' + mx + ',' + my);
+  document.querySelectorAll('.conn-drag-hover').forEach(function(el) { el.classList.remove('conn-drag-hover'); });
+  var els = document.elementsFromPoint(e.clientX, e.clientY);
+  for (var i = 0; i < els.length; i++) {
+    if (els[i].classList && els[i].classList.contains('sticker') && els[i] !== connDragSource) {
+      els[i].classList.add('conn-drag-hover'); break;
+    }
+  }
+}
+function onConnGlobalUp(e) {
+  if (!connDragSource) return;
+  var srcId = connDragSource.dataset.id;
+  if (connDragLine) { connDragLine.remove(); connDragLine = null; }
+  connDragSource.classList.remove('conn-drag-source');
+  document.querySelectorAll('.conn-drag-hover').forEach(function(el) { el.classList.remove('conn-drag-hover'); });
+  var targets = [];
+  var els = document.elementsFromPoint(e.clientX, e.clientY);
+  for (var i = 0; i < els.length; i++) {
+    if (els[i].classList && els[i].classList.contains('sticker') && els[i].dataset.id !== srcId) {
+      targets.push(els[i].dataset.id);
+    }
+  }
+  if (targets.length === 1) {
+    doCreateConnection(srcId, targets[0]);
+  } else if (targets.length > 1) {
+    showConnSelectMenu(e.clientX, e.clientY, srcId, targets);
+  }
+  connDragSource = null;
+}
+async function silentRefresh() {
+  try {
+    var sr = await fetch('/api/stickers');
+    var cr = await fetch('/api/connections');
+    stickers = await sr.json();
+    connections = await cr.json();
+    stickers.sort(function(a, b) { return new Date(b.created_at) - new Date(a.created_at); });
+    renderStickers();
+  } catch {}
+}
+async function doCreateConnection(idA, idB) {
+  try {
+    await createConnectionApi(idA, idB);
+    await silentRefresh();
+    showToast('已建立联系');
+  } catch (err) {
+    if (err.message && err.message.indexOf('已存在') > -1) {
+      showToast('已存在相同联系');
+    } else { showToast('创建联系失败'); }
+  }
+}
+function showConnSelectMenu(cx, cy, srcId, targetIds) {
+  var existing = document.querySelector('.conn-select-menu');
+  if (existing) existing.remove();
+  var menu = document.createElement('div');
+  menu.className = 'conn-select-menu';
+  menu.style.left = cx + 'px'; menu.style.top = cy + 'px';
+  targetIds.forEach(function(tid) {
+    var s = stickers.find(function(st) { return st.id === tid; });
+    if (!s) return;
+    var btn = document.createElement('button');
+    btn.className = 'conn-select-item';
+    var title = (s.text_content || '(无内容)').split('\n')[0].slice(0, 30);
+    btn.textContent = (s.author || '匿名') + ': ' + title;
+    btn.addEventListener('click', function(e) {
+      e.stopPropagation(); menu.remove(); doCreateConnection(srcId, tid);
+    });
+    menu.appendChild(btn);
+  });
+  document.body.appendChild(menu);
+  setTimeout(function() {
+    function closeMenu(e) { if (!menu.contains(e.target)) { menu.remove(); document.removeEventListener('click', closeMenu); } }
+    document.addEventListener('click', closeMenu);
+  }, 10);
+}
+function openConnPicker() {
+  if (!currentDetailId) return;
+  connPickerCurrentId = currentDetailId;
+  document.getElementById('connPickerOverlay').style.display = 'flex';
+  document.getElementById('connPickerSearch').value = '';
+  renderConnPickerList();
+  document.getElementById('connPickerSearch').focus();
+}
+function closeConnPicker() {
+  document.getElementById('connPickerOverlay').style.display = 'none';
+  connPickerCurrentId = null;
+}
+function renderConnPickerList(filter) {
+  var list = document.getElementById('connPickerList');
+  var currentId = connPickerCurrentId;
+  if (!currentId) return;
+  var connectedIds = {};
+  connections.forEach(function(c) {
+    if (c.id_a === currentId) connectedIds[c.id_b] = true;
+    if (c.id_b === currentId) connectedIds[c.id_a] = true;
+  });
+  var items = stickers.filter(function(s) { return s.id !== currentId; });
+  if (filter) {
+    var f = filter.toLowerCase();
+    items = items.filter(function(s) { return (s.text_content || '').toLowerCase().indexOf(f) > -1; });
+  }
+  list.innerHTML = '';
+  if (items.length === 0) {
+    var empty = document.createElement('div');
+    empty.className = 'conn-picker-empty';
+    empty.textContent = filter ? '无匹配便签' : '没有可添加的便签';
+    list.appendChild(empty); return;
+  }
+  items.forEach(function(s) {
+    var item = document.createElement('div');
+    item.className = 'conn-picker-item';
+    item.dataset.id = s.id;
+    var isConnected = connectedIds[s.id];
+    if (isConnected) item.classList.add('disabled');
+    var text = s.text_content || '(无内容)';
+    var lines = text.split('\n');
+    var maxLines = Math.min(4, lines.length);
+    for (var i = 0; i < maxLines; i++) {
+      var line = document.createElement('div');
+      line.className = 'conn-picker-line';
+      var lineText = lines[i];
+      if (i === 3 && lines.length > 4) lineText = lineText.slice(0, 50);
+      if (i === 3 && lines.length > 4) line.textContent = lineText + '...';
+      else line.textContent = lineText;
+      item.appendChild(line);
+    }
+    if (lines.length > 4) {
+      var dots = document.createElement('div');
+      dots.className = 'conn-picker-line'; dots.textContent = '...';
+      item.appendChild(dots);
+    }
+    if (!isConnected) {
+      item.addEventListener('click', function() { this.classList.toggle('selected'); });
+    }
+    list.appendChild(item);
+  });
+}
+async function confirmConnPicker() {
+  var currentId = connPickerCurrentId;
+  if (!currentId) return;
+  var selected = document.querySelectorAll('#connPickerList .conn-picker-item.selected');
+  var count = 0;
+  for (var i = 0; i < selected.length; i++) {
+    try {
+      await createConnectionApi(currentId, selected[i].dataset.id);
+      count++;
+    } catch (err) { if (err.message && err.message.indexOf('已存在') === -1) showToast('部分创建失败'); }
+  }
+  if (count > 0) { await silentRefresh(); showToast('已建立 ' + count + ' 条联系'); }
+  closeConnPicker();
+}
+function setupConnectionUI() {
+  setupConnBubbleDelete();
+  document.addEventListener('click', function(e) {
+    var bubble = document.getElementById('connBubble');
+    if (bubble.style.display !== 'none' && !bubble.contains(e.target)) {
+      hideConnBubble();
+    }
+  });
+  document.getElementById('connPickerOverlay').addEventListener('click', function(e) {
+    if (e.target === this) closeConnPicker();
+  });
+  document.getElementById('connPickerSearch').addEventListener('input', function(e) {
+    renderConnPickerList(e.target.value);
+  });
+  document.getElementById('connPickerConfirm').addEventListener('click', confirmConnPicker);
+  var connBtn = document.getElementById('detailConnBtn');
+  if (connBtn) connBtn.addEventListener('click', openConnPicker);
+  document.addEventListener('contextmenu', onStickerContextMenu);
 }
 </script>
 

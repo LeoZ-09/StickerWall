@@ -65,8 +65,25 @@
 
       const url = (settings.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '') + '/chat/completions';
 
-      const messages = [
-        { role: 'system', content: settings.systemPrompt },
+      // Build connection context for AI
+  var connContext = '';
+  try {
+    var stickersData = window.stickers || [];
+    var connectionsData = window.connections || [];
+    if (connectionsData.length > 0) {
+      connContext = '\n\n当前便签间的关联网络：\n';
+      connectionsData.forEach(function(c) {
+        var a = stickersData.find(function(s) { return s.id === c.id_a; });
+        var b = stickersData.find(function(s) { return s.id === c.id_b; });
+        var aText = a ? (a.text_content || a.id).slice(0, 40) : c.id_a;
+        var bText = b ? (b.text_content || b.id).slice(0, 40) : c.id_b;
+        connContext += '- "' + aText + '" ↔ "' + bText + '"\n';
+      });
+    }
+  } catch(e) {}
+
+  const messages = [
+        { role: 'system', content: settings.systemPrompt + connContext },
         { role: 'user', content: userMessage }
       ];
 
