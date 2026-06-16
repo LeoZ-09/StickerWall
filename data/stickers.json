@@ -8,30 +8,13 @@
     "drawing_data": null,
     "handwriting_data": null,
     "bg_color": "#FFF9E6",
-    "pos_x": 397.377,
-    "pos_y": 116.764,
+    "pos_x": 699.542,
+    "pos_y": 491.254,
     "rotation": -0.255579231407828,
     "width": 270,
     "height": 220,
     "created_at": "2026/6/14 16:55:08",
-    "updated_at": "2026/6/14 22:06:42"
-  },
-  {
-    "id": "86305e5e",
-    "author": "匿名",
-    "content_type": "text",
-    "text_content": "## Test",
-    "image_path": "",
-    "drawing_data": null,
-    "handwriting_data": null,
-    "bg_color": "#FFF9E6",
-    "pos_x": 62.2009,
-    "pos_y": 458.085,
-    "rotation": 1.1836976517663618,
-    "width": 270,
-    "height": 220,
-    "created_at": "2026/6/14 16:56:42",
-    "updated_at": "2026/6/14 20:57:06"
+    "updated_at": "2026/6/15 14:39:14"
   },
   {
     "id": "ae5cee9a",
@@ -42,13 +25,13 @@
     "drawing_data": null,
     "handwriting_data": null,
     "bg_color": "#FFF9E6",
-    "pos_x": 1078,
-    "pos_y": 476.098,
+    "pos_x": 1237.4,
+    "pos_y": 376.183,
     "rotation": -0.7140439022369485,
     "width": 270,
     "height": 220,
     "created_at": "2026/6/14 16:58:57",
-    "updated_at": "2026/6/14 21:21:47"
+    "updated_at": "2026/6/15 14:40:22"
   },
   {
     "id": "a6b161fb",
@@ -59,13 +42,13 @@
     "drawing_data": null,
     "handwriting_data": null,
     "bg_color": "#FFF9E6",
-    "pos_x": 360.298,
-    "pos_y": 454.219,
+    "pos_x": 337.732,
+    "pos_y": 455.428,
     "rotation": -0.3004534739253062,
     "width": 270,
     "height": 220,
     "created_at": "2026/6/14 16:59:10",
-    "updated_at": "2026/6/14 22:07:33"
+    "updated_at": "2026/6/15 14:39:13"
   },
   {
     "id": "2a1c4cd2",
@@ -76,13 +59,13 @@
     "drawing_data": null,
     "handwriting_data": null,
     "bg_color": "#FFF9E6",
-    "pos_x": 1175.25,
-    "pos_y": 70.8515,
+    "pos_x": 975.678,
+    "pos_y": 213.721,
     "rotation": 0.45094618421954635,
     "width": 270,
     "height": 220,
     "created_at": "2026/6/14 16:59:31",
-    "updated_at": "2026/6/14 22:06:53"
+    "updated_at": "2026/6/15 14:38:24"
   },
   {
     "id": "70a5ade7",
@@ -237,13 +220,13 @@
     ],
     "handwriting_data": null,
     "bg_color": "#FFFFFF",
-    "pos_x": 798.961,
-    "pos_y": 169.37,
+    "pos_x": 53.3757,
+    "pos_y": 135.914,
     "rotation": 1.6552494068258792,
     "width": 320,
     "height": 300,
     "created_at": "2026/6/14 17:45:39",
-    "updated_at": "2026/6/14 22:07:30"
+    "updated_at": "2026/6/15 14:39:11"
   },
   {
     "id": "d2805386",
@@ -254,12 +237,29 @@
     "drawing_data": null,
     "handwriting_data": null,
     "bg_color": "#F0F7FF",
-    "pos_x": 844.284,
-    "pos_y": 516.806,
+    "pos_x": 504.21,
+    "pos_y": 235.098,
     "rotation": 1.172952124819711,
     "width": 270,
     "height": 220,
     "created_at": "2026/6/14 17:57:56",
-    "updated_at": "2026/6/14 21:26:22"
+    "updated_at": "2026/6/16 20:49:32"
+  },
+  {
+    "id": "a44c8e7b",
+    "author": "匿名",
+    "content_type": "text",
+    "text_content": "White",
+    "image_path": "",
+    "drawing_data": null,
+    "handwriting_data": null,
+    "bg_color": "#FFFFFF",
+    "pos_x": 1069.33,
+    "pos_y": 623.309,
+    "rotation": 0.021189504199512932,
+    "width": 270,
+    "height": 220,
+    "created_at": "2026/6/15 14:39:36",
+    "updated_at": "2026/6/15 14:40:23"
   }
 ]
