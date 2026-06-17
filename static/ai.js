@@ -1,6 +1,7 @@
 /**
  * StickerWall AI 模块
  * 提供 AIChat、AISettings、DefaultSignature 三个全局对象
+ * API Key 在前端配置，通过后端代理转发 AI 请求
  */
 (function() {
   'use strict';
@@ -62,57 +63,55 @@
         callbacks.onError('请在设置中配置 API Key');
         return;
       }
-
-      const url = (settings.baseUrl || 'https://api.openai.com/v1').replace(/\/+$/, '') + '/chat/completions';
+      if (!userMessage) {
+        callbacks.onError('请输入消息');
+        return;
+      }
 
       // Build connection context for AI
-  var connContext = '';
-  try {
-    var stickersData = window.stickers || [];
-    var connectionsData = window.connections || [];
-    if (connectionsData.length > 0) {
-      connContext = '\n\n当前便签间的关联网络：\n';
-      connectionsData.forEach(function(c) {
-        var a = stickersData.find(function(s) { return s.id === c.id_a; });
-        var b = stickersData.find(function(s) { return s.id === c.id_b; });
-        var aText = a ? (a.text_content || a.id).slice(0, 40) : c.id_a;
-        var bText = b ? (b.text_content || b.id).slice(0, 40) : c.id_b;
-        connContext += '- "' + aText + '" ↔ "' + bText + '"\n';
-      });
-    }
-  } catch(e) {}
+      var connContext = '';
+      try {
+        var stickersData = window.stickers || [];
+        var connectionsData = window.connections || [];
+        if (connectionsData.length > 0) {
+          connContext = '\n\n当前便签间的关联网络：\n';
+          connectionsData.forEach(function(c) {
+            var a = stickersData.find(function(s) { return s.id === c.id_a; });
+            var b = stickersData.find(function(s) { return s.id === c.id_b; });
+            var aText = a ? (a.text_content || a.id).slice(0, 40) : c.id_a;
+            var bText = b ? (b.text_content || b.id).slice(0, 40) : c.id_b;
+            connContext += '- "' + aText + '" ↔ "' + bText + '"\n';
+          });
+        }
+      } catch(e) {}
 
-  const messages = [
-        { role: 'system', content: settings.systemPrompt + connContext },
-        { role: 'user', content: userMessage }
-      ];
+      const fullSystemPrompt = settings.systemPrompt + connContext;
 
-      fetch(url, {
+      // Call backend proxy — API Key is sent and forwarded, never stored server-side
+      fetch('/api/ai/chat', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer ' + settings.apiKey.trim()
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          apiKey: settings.apiKey.trim(),
+          message: userMessage,
+          systemPrompt: fullSystemPrompt,
           model: settings.model || 'gpt-3.5-turbo',
-          messages: messages,
-          temperature: 0.7,
-          max_tokens: 2000
+          baseUrl: settings.baseUrl || 'https://api.openai.com/v1'
         })
       })
       .then(function(response) {
         if (!response.ok) {
           return response.json().then(function(err) {
-            throw new Error(err.error ? err.error.message : ('HTTP ' + response.status));
+            throw new Error(err.error || ('请求失败: HTTP ' + response.status));
           }).catch(function() {
-            throw new Error('HTTP ' + response.status);
+            throw new Error('请求失败: HTTP ' + response.status);
           });
         }
         return response.json();
       })
       .then(function(data) {
-        if (data.choices && data.choices.length > 0 && data.choices[0].message) {
-          callbacks.onDone(data.choices[0].message.content);
+        if (data.content) {
+          callbacks.onDone(data.content);
         } else {
           callbacks.onError('AI 返回了空响应');
         }
