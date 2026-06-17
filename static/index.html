@@ -1001,13 +1001,17 @@ html, body {
   position: absolute; top: 0; left: 0; width: 100%; height: 100%;
   z-index: 0; pointer-events: none; overflow: visible;
 }
+.conn-hit {
+  fill: none; stroke: transparent; stroke-width: 14;
+  cursor: pointer; pointer-events: stroke;
+}
 .conn-line {
   fill: none; stroke: rgba(79, 140, 255, 0.25);
   stroke-width: 1.5; stroke-linecap: round;
-  cursor: pointer; pointer-events: stroke;
+  pointer-events: none;
   transition: stroke 0.15s ease, stroke-width 0.15s ease;
 }
-.conn-line:hover { stroke: rgba(79, 140, 255, 0.55); stroke-width: 2.5; }
+.conn-hit:hover + .conn-line { stroke: rgba(79, 140, 255, 0.55); stroke-width: 2.5; }
 .conn-line.entering {
   stroke-dasharray: 1200; stroke-dashoffset: 1200;
   animation: connDrawIn 0.6s ease forwards;
@@ -1026,8 +1030,18 @@ html, body {
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md); padding: 12px;
   box-shadow: var(--elev-soft);
-  animation: bubbleIn 0.2s ease;
+  animation: connBubbleIn 0.28s var(--ease-spring);
   display: flex; align-items: center; justify-content: center;
+  will-change: transform, opacity;
+}
+.conn-bubble.closing { animation: connBubbleOut 0.24s var(--ease-spring-soft) forwards; }
+@keyframes connBubbleIn {
+  0% { opacity: 0; transform: scale(0.92) translateY(6px); }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+@keyframes connBubbleOut {
+  0% { opacity: 1; transform: scale(1) translateY(0); }
+  100% { opacity: 0; transform: scale(0.92) translateY(4px); }
 }
 .conn-bubble-delete {
   width: 34px; height: 34px; border-radius: 50%;
@@ -1697,10 +1711,25 @@ function openDetail(id) {
       dir.textContent = '\u2194';
       item.appendChild(dir);
       var txt = document.createElement('span');
-      txt.style.cssText = 'color:var(--fg-2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;';
+      txt.style.cssText = 'flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;cursor:pointer;color:var(--fg-2);';
       txt.textContent = other ? (other.author || '匿名') + ': ' + (other.text_content || '').split('\n')[0].slice(0,30) : otherId;
-      txt.addEventListener('click', function() { closeDetail(); var t = stickers.find(function(st) { return st.id === otherId; }); if (t) openDetail(otherId); });
+      txt.addEventListener('click', function() { switchDetail(otherId); });
       item.appendChild(txt);
+      var delBtn = document.createElement('button');
+      delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px;"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
+      delBtn.style.cssText = 'width:24px;height:24px;padding:0;border:none;background:transparent;color:var(--muted);cursor:pointer;display:flex;align-items:center;justify-content:center;border-radius:50%;flex-shrink:0;margin-left:auto;transition:color 0.15s,background 0.15s;';
+      delBtn.title = '断开联系';
+      delBtn.addEventListener('click', async function(e) {
+        e.stopPropagation();
+        await deleteConnectionApi(c.id);
+        await silentRefresh();
+        showToast('联系已断开');
+        // 刷新详情页显示（不关闭弹窗）
+        openDetail(currentDetailId);
+      });
+      delBtn.addEventListener('mouseenter', function() { this.style.color = 'var(--danger)'; this.style.background = 'var(--danger-soft)'; });
+      delBtn.addEventListener('mouseleave', function() { this.style.color = 'var(--muted)'; this.style.background = 'transparent'; });
+      item.appendChild(delBtn);
       connSection.appendChild(item);
     });
   }
@@ -1719,6 +1748,14 @@ function closeDetail() {
     overlay.style.pointerEvents = '';
     currentDetailId = null;
   }, 280);
+}
+function switchDetail(newId) {
+  // 取消正在进行的关闭动画，直接切换内容
+  var overlay = document.getElementById('detailOverlay');
+  var card = overlay.querySelector('.detail-card');
+  card.classList.remove('closing');
+  overlay.style.pointerEvents = '';
+  openDetail(newId);
 }
 async function deleteFromDetail() { if (!currentDetailId) return; await deleteSticker(currentDetailId); closeDetail(); }
 
@@ -2145,6 +2182,34 @@ function buildConnPath(p1, p2) {
   var offset = Math.max(dist * 0.25, 30);
   return 'M ' + p1.x + ',' + p1.y + ' Q ' + midX + ',' + (midY - offset) + ' ' + p2.x + ',' + p2.y;
 }
+function createConnPathPair(svg, d, connId, skipAnim) {
+  // 透明宽路径（点击热区，stroke-width=14）
+  var hit = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  hit.setAttribute('d', d);
+  hit.setAttribute('class', 'conn-hit');
+  hit.dataset.connId = connId;
+  hit.addEventListener('click', function(e) { onConnLineClick(e, connId); });
+  svg.appendChild(hit);
+  // 可见细路径（无 pointer-events，不拦截点击）
+  var vis = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+  vis.setAttribute('class', 'conn-line' + (skipAnim ? '' : ' entering'));
+  vis.setAttribute('d', d);
+  vis.style.pointerEvents = 'none';
+  svg.appendChild(vis);
+  if (!skipAnim) {
+    setTimeout(function() { vis.classList.remove('entering'); }, 650);
+  }
+  connPathMap.set(connId, { hit: hit, vis: vis });
+  return { hit: hit, vis: vis };
+}
+function updateConnPathPair(svg, connId, d) {
+  var pair = connPathMap.get(connId);
+  if (pair) {
+    pair.hit.setAttribute('d', d);
+    pair.vis.setAttribute('d', d);
+  }
+}
+var connPathMap = new Map();
 var connFirstRender = true;
 function renderConnections(stickerId) {
   const svg = document.getElementById('connectionsLayer');
@@ -2157,31 +2222,18 @@ function renderConnections(stickerId) {
       var b = stickers.find(function(s) { return s.id === c.id_b; });
       if (!a || !b) return;
       var d = buildConnPath(computeAnchor(a), computeAnchor(b));
-      var paths = svg.querySelectorAll('.conn-line');
-      for (var i = 0; i < paths.length; i++) {
-        if (paths[i].dataset.connId === c.id) {
-          paths[i].setAttribute('d', d);
-          break;
-        }
-      }
+      updateConnPathPair(svg, c.id, d);
     });
   } else {
     // 全量重建（初始加载 / 创建 / 删除 / WebSocket）
     while (svg.firstChild) svg.removeChild(svg.firstChild);
+    connPathMap.clear();
     connections.forEach(function(c) {
       var a = stickers.find(function(s) { return s.id === c.id_a; });
       var b = stickers.find(function(s) { return s.id === c.id_b; });
       if (!a || !b) return;
       var d = buildConnPath(computeAnchor(a), computeAnchor(b));
-      var path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-      path.setAttribute('class', 'conn-line' + (connFirstRender ? ' entering' : ''));
-      path.setAttribute('d', d);
-      path.dataset.connId = c.id;
-      path.addEventListener('click', function(e) { onConnLineClick(e, c.id); });
-      svg.appendChild(path);
-      if (connFirstRender) {
-        setTimeout(function() { path.classList.remove('entering'); }, 650);
-      }
+      createConnPathPair(svg, d, c.id, !connFirstRender);
     });
     connFirstRender = false;
   }
@@ -2190,12 +2242,39 @@ function onConnLineClick(e, connId) {
   e.stopPropagation();
   activeConnId = connId;
   var bubble = document.getElementById('connBubble');
+  bubble.classList.remove('closing');
   bubble.style.display = 'flex';
-  bubble.style.left = (e.clientX - 75) + 'px';
-  bubble.style.top = (e.clientY - 60) + 'px';
+  bubble.style.left = '0px';
+  bubble.style.top = '0px';
+  // 等待布局完成后计算智能位置
+  requestAnimationFrame(function() {
+    var bw = bubble.offsetWidth, bh = bubble.offsetHeight;
+    var gap = 8;
+    // 默认：水平居中于鼠标，下边缘与鼠标 Y 齐平（气泡在上方）
+    var left = e.clientX - bw / 2;
+    var top = e.clientY - bh - gap;
+    // 上边界溢出 → 改到鼠标下方
+    if (top < 0) {
+      top = e.clientY + gap;
+    }
+    // 左边界溢出
+    if (left < gap) left = gap;
+    // 右边界溢出
+    if (left + bw > window.innerWidth - gap) {
+      left = window.innerWidth - bw - gap;
+    }
+    bubble.style.left = left + 'px';
+    bubble.style.top = top + 'px';
+  });
 }
 function hideConnBubble() {
-  document.getElementById('connBubble').style.display = 'none';
+  var bubble = document.getElementById('connBubble');
+  if (bubble.style.display === 'none') return;
+  bubble.classList.add('closing');
+  setTimeout(function() {
+    bubble.style.display = 'none';
+    bubble.classList.remove('closing');
+  }, 240);
   activeConnId = null;
 }
 function setupConnBubbleDelete() {
@@ -2203,7 +2282,6 @@ function setupConnBubbleDelete() {
   if (btn._setup) return; btn._setup = true;
   btn.addEventListener('click', async function() {
     if (!activeConnId) return;
-    if (!confirm('确定删除此联系？')) return;
     await deleteConnectionApi(activeConnId);
     hideConnBubble();
     await silentRefresh();

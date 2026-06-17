@@ -8,13 +8,13 @@
     "drawing_data": null,
     "handwriting_data": null,
     "bg_color": "#FFF9E6",
-    "pos_x": 699.542,
-    "pos_y": 491.254,
+    "pos_x": 751.399,
+    "pos_y": 532.437,
     "rotation": -0.255579231407828,
     "width": 270,
     "height": 220,
     "created_at": "2026/6/14 16:55:08",
-    "updated_at": "2026/6/15 14:39:14"
+    "updated_at": "2026/6/16 21:47:56"
   },
   {
     "id": "ae5cee9a",
@@ -25,13 +25,13 @@
     "drawing_data": null,
     "handwriting_data": null,
     "bg_color": "#FFF9E6",
-    "pos_x": 1237.4,
-    "pos_y": 376.183,
+    "pos_x": 1283.99,
+    "pos_y": 279.374,
     "rotation": -0.7140439022369485,
     "width": 270,
     "height": 220,
     "created_at": "2026/6/14 16:58:57",
-    "updated_at": "2026/6/15 14:40:22"
+    "updated_at": "2026/6/16 21:09:14"
   },
   {
     "id": "a6b161fb",
@@ -42,13 +42,13 @@
     "drawing_data": null,
     "handwriting_data": null,
     "bg_color": "#FFF9E6",
-    "pos_x": 337.732,
-    "pos_y": 455.428,
+    "pos_x": 902.277,
+    "pos_y": 93.1566,
     "rotation": -0.3004534739253062,
     "width": 270,
     "height": 220,
     "created_at": "2026/6/14 16:59:10",
-    "updated_at": "2026/6/15 14:39:13"
+    "updated_at": "2026/6/16 21:48:01"
   },
   {
     "id": "2a1c4cd2",
@@ -59,13 +59,13 @@
     "drawing_data": null,
     "handwriting_data": null,
     "bg_color": "#FFF9E6",
-    "pos_x": 975.678,
-    "pos_y": 213.721,
+    "pos_x": 211.948,
+    "pos_y": 468.807,
     "rotation": 0.45094618421954635,
     "width": 270,
     "height": 220,
     "created_at": "2026/6/14 16:59:31",
-    "updated_at": "2026/6/15 14:38:24"
+    "updated_at": "2026/6/16 21:48:01"
   },
   {
     "id": "70a5ade7",
@@ -220,13 +220,13 @@
     ],
     "handwriting_data": null,
     "bg_color": "#FFFFFF",
-    "pos_x": 53.3757,
-    "pos_y": 135.914,
+    "pos_x": 149.622,
+    "pos_y": 119.307,
     "rotation": 1.6552494068258792,
     "width": 320,
     "height": 300,
     "created_at": "2026/6/14 17:45:39",
-    "updated_at": "2026/6/15 14:39:11"
+    "updated_at": "2026/6/16 21:47:50"
   },
   {
     "id": "d2805386",
@@ -237,13 +237,13 @@
     "drawing_data": null,
     "handwriting_data": null,
     "bg_color": "#F0F7FF",
-    "pos_x": 504.21,
-    "pos_y": 235.098,
+    "pos_x": 482.552,
+    "pos_y": 171.097,
     "rotation": 1.172952124819711,
     "width": 270,
     "height": 220,
     "created_at": "2026/6/14 17:57:56",
-    "updated_at": "2026/6/16 20:49:32"
+    "updated_at": "2026/6/17 21:41:46"
   },
   {
     "id": "a44c8e7b",
@@ -254,12 +254,12 @@
     "drawing_data": null,
     "handwriting_data": null,
     "bg_color": "#FFFFFF",
-    "pos_x": 1069.33,
-    "pos_y": 623.309,
+    "pos_x": 1076.6,
+    "pos_y": 486.665,
     "rotation": 0.021189504199512932,
     "width": 270,
     "height": 220,
     "created_at": "2026/6/15 14:39:36",
-    "updated_at": "2026/6/15 14:40:23"
+    "updated_at": "2026/6/16 21:47:56"
   }
 ]
