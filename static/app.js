@@ -308,6 +308,29 @@ function openDetail(id) {
   }
   body.appendChild(connSection);
   document.getElementById('detailOverlay').style.display = 'flex';
+
+  // 底部渐变遮罩 — 内容溢出时显示，滚动到底部时隐藏
+  requestAnimationFrame(() => {
+    const card = document.querySelector('.detail-card');
+    if (!card) return;
+    if (body.scrollHeight > body.clientHeight) {
+      card.classList.add('has-overflow');
+      card.classList.remove('scrolled-bottom');
+    } else {
+      card.classList.remove('has-overflow', 'scrolled-bottom');
+    }
+  });
+  body._detailScrollHandler = body._detailScrollHandler || (() => {
+    const card = document.querySelector('.detail-card');
+    if (!card || !card.classList.contains('has-overflow')) return;
+    if (body.scrollHeight - body.scrollTop - body.clientHeight < 1) {
+      card.classList.add('scrolled-bottom');
+    } else {
+      card.classList.remove('scrolled-bottom');
+    }
+  });
+  body.removeEventListener('scroll', body._detailScrollHandler);
+  body.addEventListener('scroll', body._detailScrollHandler, { passive: true });
 }
 function closeDetail() {
   const overlay = document.getElementById('detailOverlay');
