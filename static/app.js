@@ -659,8 +659,7 @@ function saveSettings() {
     platform: document.getElementById('setPlatform').value,
     apiKey: document.getElementById('setApiKey').value.trim(),
     baseUrl: document.getElementById('setBaseUrl').value.trim() || 'https://api.openai.com/v1',
-    model: document.getElementById('setModel').value.trim() || 'gpt-3.5-turbo',
-    systemPrompt: '你是一个友好的便签墙助手，帮助用户记录想法、润色文字、提供创意灵感。请用中文回复，保持简洁。\n\n格式限制：只能使用标题（# / ## / ###）和纯文本段落两种 Markdown 样式，不使用列表、代码块、表格、引用等其他格式。'
+    model: document.getElementById('setModel').value.trim() || 'gpt-3.5-turbo'
   });
   const wrap = document.getElementById('aiChatWrap');
   if (enabled) { wrap.classList.remove('hidden'); } else { wrap.classList.add('hidden'); }
@@ -668,27 +667,62 @@ function saveSettings() {
   showToast('设置已保存');
 }
 
-// ========== AI Chat ==========
+// ========== AI / Agent Chat ==========
 let lastAIReply = '';
+let agentSteps = [];      // 记录 Agent 调用步骤，用于展示
+
 async function sendAIChat() {
   const input = document.getElementById('aiChatInput'), sendBtn = document.getElementById('aiChatSend'),
         bubble = document.getElementById('aiReplyBubble'), contentEl = document.getElementById('aiBubbleContent'),
         toStickerBtn = document.getElementById('aiBubbleToStickerBtn');
   const msg = input.value.trim();
   if (!msg) return;
-  if (!window.AIChat) { showToast('AI 模块未加载，请刷新页面'); return; }
+  if (!window.AgentChat && !window.AIChat) { showToast('AI 模块未加载，请刷新页面'); return; }
   input.value = '';
   sendBtn.classList.add('loading');
   toStickerBtn.classList.remove('visible');
-  bubble.style.display = 'block'; contentEl.innerHTML = '思考中…';
-  AIChat.send(msg, {
-    onDone: (text) => {
+
+  // Agent 模式：流式展示每一步
+  agentSteps = [];
+  bubble.style.display = 'block';
+  contentEl.innerHTML = '<div class="agent-waiting"><div class="agent-pulse"></div><div>🤔 Agent 思考中…</div></div>';
+
+  (window.AgentChat || window.AIChat).send(msg, {
+    onThinking: function(tool, args) {
+      var stepHtml = '<div class="agent-step">' +
+        '<span class="agent-step-icon">🔍</span>' +
+        '<span class="agent-step-name">' + toolNameZh(tool) + '</span>' +
+        '</div>';
+      contentEl.innerHTML = stepHtml + '<div class="agent-waiting"><div class="agent-pulse"></div><div>等待结果…</div></div>';
+    },
+    onToolResult: function(tool, result) {
+      var resultSummary = '';
+      if (Array.isArray(result)) {
+        resultSummary = '✅ 返回 ' + result.length + ' 条结果';
+      } else if (result && result.error) {
+        resultSummary = '⚠️ ' + result.error;
+      } else if (result && result.total_stickers !== undefined) {
+        resultSummary = '✅ 统计完成';
+      } else {
+        resultSummary = '✅ 已获取';
+      }
+      var steps = contentEl.querySelectorAll('.agent-step');
+      if (steps.length > 0) {
+        var lastStep = steps[steps.length - 1];
+        lastStep.innerHTML = lastStep.innerHTML.replace('🔍', '✅');
+        var resultSpan = document.createElement('span');
+        resultSpan.className = 'agent-step-result';
+        resultSpan.textContent = resultSummary;
+        lastStep.appendChild(resultSpan);
+      }
+    },
+    onDone: function(text) {
       lastAIReply = text;
       contentEl.innerHTML = typeof marked !== 'undefined' ? marked.parse(text) : text;
       toStickerBtn.classList.add('visible');
       sendBtn.classList.remove('loading');
     },
-    onError: (err) => {
+    onError: function(err) {
       lastAIReply = '';
       contentEl.innerHTML = '❌ ' + err;
       toStickerBtn.classList.remove('visible');
@@ -696,6 +730,20 @@ async function sendAIChat() {
       setTimeout(hideBubble, 6000);
     }
   });
+}
+
+// 工具名中文化
+function toolNameZh(name) {
+  var map = {
+    'search_stickers': '搜索便签',
+    'get_all_stickers': '读取便签列表',
+    'get_sticker_detail': '读取便签详情',
+    'get_sticker_connections': '读取便签关联',
+    'get_all_connections': '读取关联网络',
+    'get_wall_stats': '统计墙面数据',
+    'get_stickers_by_author': '按作者查询便签'
+  };
+  return map[name] || name;
 }
 
 function hideBubble() {

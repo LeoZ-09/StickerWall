@@ -410,6 +410,9 @@ app.post('/api/upload', upload.single('file'), async (req, res) => {
   }
 });
 
+// ==================== Agent Module ====================
+const { runAgent } = require('./agent');
+
 // ==================== Routes: AI Chat Proxy ====================
 // 纯透传代理：API Key 由前端提供，服务端不存储任何 AI 配置
 
@@ -458,6 +461,68 @@ app.post('/api/ai/chat', express.json(), async (req, res) => {
   } catch (err) {
     console.error('AI proxy error:', err.message);
     res.status(502).json({ error: `AI 请求失败: ${err.message}` });
+  }
+});
+
+// ==================== Routes: Agent Chat (SSE) ====================
+// Agent 模式：LLM + tool calling 编排，SSE 流式推送每一步
+
+app.post('/api/agent/chat', express.json(), async (req, res) => {
+  const { message, systemPrompt, model, baseUrl, apiKey } = req.body;
+
+  if (!apiKey) {
+    return res.status(400).json({ error: '缺少 apiKey 参数，请在设置中配置 API Key' });
+  }
+  if (!message) {
+    return res.status(400).json({ error: '缺少 message 参数' });
+  }
+
+  // SSE 头
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+  res.setHeader('X-Accel-Buffering', 'no');
+  res.flushHeaders();
+
+  const sse = (event, data) => {
+    res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  };
+
+  const db = {
+    dbQuery: (sql, params) => {
+      // 引用 server.js 中的顶层 dbQuery
+      return dbQuery(sql, params);
+    },
+    formatSticker: (row) => {
+      return formatSticker(row);
+    }
+  };
+
+  try {
+    await runAgent({
+      userMessage: message,
+      systemPrompt: systemPrompt || '你是一个友好的便签墙助手。',
+      apiKey,
+      baseUrl,
+      model,
+      db,
+      onEvent: (eventType, data) => {
+        if (eventType === 'thinking') {
+          sse('thinking', { tool: data.tool, args: data.args });
+        } else if (eventType === 'tool_result') {
+          sse('tool_result', { tool: data.tool, result: data.result });
+        } else if (eventType === 'done') {
+          sse('done', { content: data.content });
+        } else if (eventType === 'error') {
+          sse('error', { message: data.message });
+        }
+      }
+    });
+  } catch (err) {
+    // runAgent 内部已通过 onEvent 发送 error，这里仅确保连接关闭
+    sse('error', { message: err.message || 'Agent 执行失败' });
+  } finally {
+    res.end();
   }
 });
 
