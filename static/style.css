@@ -337,6 +337,8 @@ html, body {
   overflow: hidden;
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   will-change: transform, opacity;
+  height: 100%;
+  max-height: 560px;
 }
 .create-modal.closing { animation: modalClose 0.28s var(--ease-spring-soft) forwards; }
 @keyframes modalPop {
@@ -368,7 +370,7 @@ html, body {
 
 /* Body */
 .create-body {
-  flex: 1; overflow-y: auto;
+  flex: 1; overflow: hidden;
   display: flex; flex-direction: column; gap: 16px;
   padding: 18px 24px 20px; min-height: 0;
 }
@@ -402,7 +404,7 @@ html, body {
 /* Tabs row: 模式切换 + 右上角对钩 */
 .create-tabs-row {
   display: flex; align-items: center;
-  gap: 12px;
+  gap: 12px; flex-shrink: 0;
 }
 .create-confirm {
   margin-left: auto;
@@ -423,7 +425,7 @@ html, body {
 .create-content {
   flex: none;
   height: 404px;
-  min-height: 404px;
+  max-height: calc(100% - 160px);
   display: flex; flex-direction: column;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius-md);
@@ -443,9 +445,9 @@ html, body {
 .create-canvas-panel {
   display: flex; flex-direction: column; gap: 12px;
   padding: 14px;
-  height: 100%;
-  min-height: 100%;
-  max-height: 100%;
+  height: auto;
+  /*min-height: 100%;
+  max-height: 100%;*/
 }
 .canvas-toolbar { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 .tool-btn {
@@ -608,7 +610,7 @@ html, body {
 /* Meta fields */
 .create-meta {
   display: flex; flex-direction: column; gap: 10px;
-  padding-top: 2px;
+  padding-top: 2px; flex-shrink: 0;
 }
 .meta-row {
   display: flex; align-items: center; gap: 12px;
