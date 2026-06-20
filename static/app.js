@@ -617,7 +617,7 @@ function initSettingsUI() {
   document.getElementById('setApiKey').value = s.apiKey || '';
   document.getElementById('setBaseUrl').value = s.baseUrl || 'https://api.openai.com/v1';
   document.getElementById('setModel').value = s.model || 'gpt-3.5-turbo';
-  const block = document.getElementById('aiSettingsBlock');
+  const block = document.querySelector('.ai-settings-wrap');
   if (s.enabled) { block.classList.remove('collapsed'); } else { block.classList.add('collapsed'); }
   var wrap = document.getElementById('aiChatWrap');
   if (s.enabled) { wrap.classList.remove('hidden'); } else { wrap.classList.add('hidden'); }
@@ -641,7 +641,7 @@ function closeSettings() {
 }
 function onSettingAIEnabled() {
   const enabled = document.getElementById('setAIEnabled').checked;
-  const block = document.getElementById('aiSettingsBlock');
+  const block = document.querySelector('.ai-settings-wrap');
   if (enabled) { block.classList.remove('collapsed'); } else { block.classList.add('collapsed'); }
 }
 function onSettingPlatformChange() {

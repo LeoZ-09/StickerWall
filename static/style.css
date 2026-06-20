@@ -838,7 +838,6 @@ html, body {
   overflow: hidden;
   box-shadow: var(--elev-modal);
   animation: modalPop 0.36s var(--ease-spring);
-  transition: height 0.4s var(--ease-spring);
   backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
   will-change: transform, opacity;
 }
@@ -866,7 +865,7 @@ html, body {
 .settings-confirm svg { width: 18px; height: 18px; }
 
 .settings-body {
-  flex: 1; min-height: 0; overflow-y: auto; padding: 22px 24px;
+  flex: 1; min-height: 0; height: 0; overflow-y: auto; padding: 22px 24px;
   display: flex; flex-direction: column; gap: 22px;
   scrollbar-gutter: stable;
   transition: opacity var(--motion-base) var(--ease-standard),
@@ -942,16 +941,20 @@ html, body {
 }
 .switch-input:checked + .switch-label::after { left: 22px; }
 
-#aiSettingsBlock {
-  display: flex; flex-direction: column; gap: 22px;
-  overflow: hidden;
-  max-height: 500px; opacity: 1;
+.ai-settings-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  max-height: 340px;
+  opacity: 1;
   transition: max-height 0.45s var(--ease-spring),
               opacity 0.35s var(--ease-standard),
               margin-top 0.45s var(--ease-standard);
 }
-#aiSettingsBlock.collapsed {
-  max-height: 0; opacity: 0; margin-top: -10px;
+.ai-settings-wrap.collapsed {
+  max-height: 0;
+  opacity: 0;
+  margin-top: -10px;
   pointer-events: none;
 }
 .settings-footer {
